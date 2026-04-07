@@ -1,0 +1,60 @@
+@import "tailwindcss";
+
+@import url('https://fonts.googleapis.com/css2?family=Ma+Shan+Zheng&family=Noto+Sans+SC:wght@400;500;600;700&display=swap');
+
+@theme {
+  --color-brand-green: #2D6A4F;
+  --color-brand-green-light: #52B788;
+  --color-brand-green-pale: #D8F3DC;
+  --color-brand-orange: #E76F51;
+  --color-brand-orange-light: #F4A261;
+  --color-brand-orange-pale: #FFF0E6;
+  --color-brand-yellow: #F4C542;
+  --color-brand-yellow-pale: #FFF8E1;
+  --color-brand-brown: #6B4226;
+  --color-brand-cream: #FEFAE0;
+  --color-brand-sand: #F5EFD8;
+  
+  --color-text: #2C2416;
+  --color-text-soft: #6B5B45;
+  --color-text-muted: #A08060;
+  
+  --font-family-display: "Ma Shan Zheng", cursive;
+  --font-family-body: "Noto Sans SC", sans-serif;
+  
+  --radius-sm: 12px;
+  --radius: 20px;
+  --radius-lg: 28px;
+  
+  --shadow-sm: 0 2px 8px rgba(44,36,22,0.08);
+  --shadow: 0 4px 20px rgba(44,36,22,0.12);
+  --shadow-lg: 0 8px 40px rgba(44,36,22,0.16);
+}
+
+body {
+  font-family: 'Noto Sans SC', sans-serif;
+  background-color: #FEFAE0;
+  color: #2C2416;
+  margin: 0;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+.wall-grid {
+  columns: 3;
+  column-gap: 16px;
+}
+
+@media (max-width: 768px) {
+  .wall-grid {
+    columns: 2;
+  }
+}
+
+@media (max-width: 480px) {
+  .wall-grid {
+    columns: 1;
+  }
+}

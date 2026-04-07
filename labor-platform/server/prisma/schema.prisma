@@ -1,0 +1,176 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = "file:./dev.db"
+}
+
+model TaskGroup {
+  id        String   @id
+  name      String   @unique
+  icon      String
+  type      String
+  sortOrder Int      @default(0)
+  createdAt DateTime @default(now())
+  
+  courses Course[]
+}
+
+model Grade {
+  id        Int      @id
+  name      String   @unique
+  createdAt DateTime @default(now())
+  
+  students Student[]
+  courses  Course[]
+}
+
+model Course {
+  id          String   @id @default(uuid())
+  
+  gradeId     Int
+  grade       Grade    @relation(fields: [gradeId], references: [id])
+  semesterId  Int
+  taskGroupId String
+  taskGroup   TaskGroup @relation(fields: [taskGroupId], references: [id])
+  
+  title       String
+  emoji       String   @default("🌱")
+  color       String   @default("#E8F5E9")
+  description String
+  objectives  String
+  materials   String
+  steps       String
+  safetyTips  String
+  
+  coverSvg    String?
+  
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([gradeId, semesterId])
+  @@index([taskGroupId])
+}
+
+model Student {
+  id            String   @id @default(uuid())
+  
+  studentId     String   @unique
+  password      String
+  nickname      String
+  avatarEmoji   String   @default("🌟")
+  
+  gradeId       Int
+  grade         Grade    @relation(fields: [gradeId], references: [id])
+  classCode     String
+  
+  totalAchievements Int @default(0)
+  totalLikes        Int @default(0)
+  
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  
+  achievements Achievement[]
+  likes       Like[]
+  badges      StudentBadge[]
+  evaluations Evaluation[]
+
+  @@index([gradeId, classCode])
+}
+
+model Achievement {
+  id          String   @id @default(uuid())
+  
+  studentId   String
+  student     Student  @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  
+  courseId    String?
+  courseTitle String?
+  
+  title       String
+  description String
+  reflection  String?
+  images      String
+  isPublic    Boolean  @default(true)
+  
+  evalAttitude Int @default(0)
+  evalSkill    Int @default(0)
+  evalResult   Int @default(0)
+  
+  avgAttitude Float @default(0)
+  avgSkill    Float @default(0)
+  avgResult   Float @default(0)
+  evalCount   Int   @default(0)
+  
+  likesCount  Int      @default(0)
+  
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  
+  likes       Like[]
+  evaluations Evaluation[]
+
+  @@index([studentId])
+  @@index([isPublic, createdAt])
+}
+
+model Like {
+  id            String   @id @default(uuid())
+  
+  studentId     String
+  student       Student  @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  achievementId String
+  achievement   Achievement @relation(fields: [achievementId], references: [id], onDelete: Cascade)
+  
+  createdAt     DateTime @default(now())
+
+  @@unique([studentId, achievementId])
+  @@index([achievementId])
+}
+
+model Evaluation {
+  id            String   @id @default(uuid())
+  
+  studentId     String
+  student       Student  @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  achievementId String
+  achievement   Achievement @relation(fields: [achievementId], references: [id], onDelete: Cascade)
+  
+  attitude      Int
+  skill         Int
+  result        Int
+  
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  @@unique([studentId, achievementId])
+  @@index([achievementId])
+}
+
+model Badge {
+  id          String   @id @default(uuid())
+  name        String   @unique
+  emoji       String
+  description String
+  category    String
+  
+  createdAt DateTime @default(now())
+  
+  studentBadges StudentBadge[]
+}
+
+model StudentBadge {
+  id        String   @id @default(uuid())
+  
+  studentId String
+  student   Student  @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  badgeId   String
+  badge     Badge    @relation(fields: [badgeId], references: [id])
+  
+  earnedAt  DateTime @default(now())
+
+  @@unique([studentId, badgeId])
+}

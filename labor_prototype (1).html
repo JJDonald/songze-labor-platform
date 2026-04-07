@@ -1,0 +1,2041 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>劳动课堂 · 上海市六七年级劳动公共项目平台</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Ma+Shan+Zheng&family=Noto+Sans+SC:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --green: #2D6A4F;
+    --green-light: #52B788;
+    --green-pale: #D8F3DC;
+    --orange: #E76F51;
+    --orange-light: #F4A261;
+    --orange-pale: #FFF0E6;
+    --yellow: #F4C542;
+    --yellow-pale: #FFF8E1;
+    --brown: #6B4226;
+    --cream: #FEFAE0;
+    --sand: #F5EFD8;
+    --text: #2C2416;
+    --text-soft: #6B5B45;
+    --text-muted: #A08060;
+    --white: #FFFFFF;
+    --radius-sm: 12px;
+    --radius: 20px;
+    --radius-lg: 28px;
+    --shadow-sm: 0 2px 8px rgba(44,36,22,0.08);
+    --shadow: 0 4px 20px rgba(44,36,22,0.12);
+    --shadow-lg: 0 8px 40px rgba(44,36,22,0.16);
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    font-family: 'Noto Sans SC', sans-serif;
+    background: var(--cream);
+    color: var(--text);
+    overflow-x: hidden;
+    min-height: 100vh;
+  }
+
+  /* ===== PAGES ===== */
+  .page { display: none; min-height: 100vh; animation: fadeIn .3s ease; }
+  .page.active { display: block; }
+  @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+
+  /* ===== NAV ===== */
+  nav {
+    position: sticky; top: 0; z-index: 100;
+    background: rgba(254,250,224,0.92);
+    backdrop-filter: blur(12px);
+    border-bottom: 2px solid var(--sand);
+    padding: 0 24px;
+    height: 64px;
+    display: flex; align-items: center; justify-content: space-between;
+  }
+  .nav-logo {
+    display: flex; align-items: center; gap: 10px; cursor: pointer;
+    font-family: 'Ma Shan Zheng', cursive; font-size: 22px; color: var(--green);
+  }
+  .nav-logo .icon { font-size: 28px; }
+  .nav-links { display: flex; gap: 4px; }
+  .nav-link {
+    padding: 8px 16px; border-radius: 100px; cursor: pointer;
+    font-size: 14px; font-weight: 500; color: var(--text-soft);
+    transition: all .2s; border: none; background: none;
+  }
+  .nav-link:hover, .nav-link.active {
+    background: var(--green); color: var(--white);
+  }
+  .nav-user {
+    width: 36px; height: 36px; border-radius: 50%;
+    background: var(--orange); color: white;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 16px; cursor: pointer; font-weight: 700;
+  }
+
+  /* ===== BUTTONS ===== */
+  .btn {
+    display: inline-flex; align-items: center; gap: 8px;
+    padding: 12px 24px; border-radius: 100px; border: none;
+    font-family: 'Noto Sans SC', sans-serif; font-size: 15px; font-weight: 600;
+    cursor: pointer; transition: all .2s; text-decoration: none;
+  }
+  .btn-primary { background: var(--green); color: white; }
+  .btn-primary:hover { background: #1F5138; transform: translateY(-2px); box-shadow: var(--shadow); }
+  .btn-orange { background: var(--orange); color: white; }
+  .btn-orange:hover { background: #c95a3e; transform: translateY(-2px); box-shadow: var(--shadow); }
+  .btn-ghost { background: transparent; color: var(--green); border: 2px solid var(--green); }
+  .btn-ghost:hover { background: var(--green-pale); }
+  .btn-sm { padding: 8px 16px; font-size: 13px; }
+
+  /* ===== TAGS ===== */
+  .tag {
+    display: inline-flex; align-items: center; gap: 4px;
+    padding: 4px 12px; border-radius: 100px; font-size: 12px; font-weight: 600;
+  }
+  .tag-green { background: var(--green-pale); color: var(--green); }
+  .tag-orange { background: var(--orange-pale); color: var(--orange); }
+  .tag-yellow { background: var(--yellow-pale); color: #B07D00; }
+
+  /* ===== CARDS ===== */
+  .card {
+    background: white; border-radius: var(--radius);
+    box-shadow: var(--shadow-sm); overflow: hidden;
+    transition: all .25s; cursor: pointer;
+  }
+  .card:hover { transform: translateY(-4px); box-shadow: var(--shadow-lg); }
+
+  /* ===== CONTAINER ===== */
+  .container { max-width: 1100px; margin: 0 auto; padding: 0 24px; }
+
+  /* ===== SECTION TITLE ===== */
+  .section-title {
+    font-family: 'Ma Shan Zheng', cursive; font-size: 28px;
+    color: var(--text); margin-bottom: 6px;
+  }
+  .section-subtitle { font-size: 14px; color: var(--text-muted); margin-bottom: 24px; }
+
+  /* ===================================================
+     PAGE 1: HOME
+  =================================================== */
+  #home {}
+
+  /* Hero */
+  .hero {
+    background: linear-gradient(135deg, #1a4a36 0%, #2D6A4F 50%, #3d8b6a 100%);
+    padding: 60px 24px 80px;
+    position: relative; overflow: hidden;
+  }
+  .hero::before {
+    content: '';
+    position: absolute; inset: 0;
+    background: url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23ffffff' fill-opacity='0.04'%3E%3Ccircle cx='30' cy='30' r='4'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E");
+  }
+  .hero-inner { max-width: 1100px; margin: 0 auto; position: relative; z-index: 1; }
+  .hero-badge {
+    display: inline-flex; align-items: center; gap: 6px;
+    background: rgba(255,255,255,0.15); color: rgba(255,255,255,0.9);
+    padding: 6px 14px; border-radius: 100px; font-size: 13px; font-weight: 500;
+    border: 1px solid rgba(255,255,255,0.2); margin-bottom: 20px;
+  }
+  .hero h1 {
+    font-family: 'Ma Shan Zheng', cursive; font-size: 52px; color: white;
+    line-height: 1.2; margin-bottom: 16px;
+  }
+  .hero h1 span { color: var(--yellow); }
+  .hero p { font-size: 17px; color: rgba(255,255,255,0.8); margin-bottom: 32px; max-width: 480px; }
+  .hero-actions { display: flex; gap: 12px; flex-wrap: wrap; }
+  .hero-deco {
+    position: absolute; right: 60px; top: 50%; transform: translateY(-50%);
+    font-size: 120px; opacity: 0.12; pointer-events: none;
+  }
+  .hero-stats {
+    display: flex; gap: 32px; margin-top: 48px; padding-top: 32px;
+    border-top: 1px solid rgba(255,255,255,0.15);
+  }
+  .stat { color: white; }
+  .stat-num { font-family: 'Ma Shan Zheng', cursive; font-size: 32px; color: var(--yellow); }
+  .stat-label { font-size: 13px; color: rgba(255,255,255,0.65); margin-top: 2px; }
+
+  /* Grade Select */
+  .grade-select {
+    background: white; padding: 32px 24px;
+    border-bottom: 2px solid var(--sand);
+  }
+  .grade-select-inner { max-width: 1100px; margin: 0 auto; }
+  .grade-label { font-size: 13px; font-weight: 600; color: var(--text-muted); letter-spacing: 0.05em; margin-bottom: 12px; }
+  .grade-tabs { display: flex; gap: 8px; }
+  .grade-tab {
+    padding: 10px 28px; border-radius: 100px; font-size: 15px; font-weight: 600;
+    cursor: pointer; border: 2px solid var(--sand); background: var(--cream);
+    color: var(--text-soft); transition: all .2s;
+  }
+  .grade-tab.active { background: var(--green); color: white; border-color: var(--green); }
+  .grade-tab:hover:not(.active) { border-color: var(--green); color: var(--green); }
+
+  /* Featured Courses */
+  .home-section { padding: 48px 0; }
+  .courses-grid {
+    display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 20px;
+  }
+  .course-card { background: white; border-radius: var(--radius); overflow: hidden; box-shadow: var(--shadow-sm); transition: all .25s; cursor: pointer; }
+  .course-card:hover { transform: translateY(-4px); box-shadow: var(--shadow-lg); }
+  .course-card-cover {
+    height: 140px; display: flex; align-items: center; justify-content: center;
+    font-size: 56px; position: relative;
+  }
+  .course-card-body { padding: 16px; }
+  .course-card-meta { display: flex; gap: 6px; margin-bottom: 8px; flex-wrap: wrap; }
+  .course-card h3 { font-size: 16px; font-weight: 700; margin-bottom: 6px; }
+  .course-card p { font-size: 13px; color: var(--text-muted); line-height: 1.6; }
+  .course-card-footer { padding: 12px 16px; border-top: 1px solid #f0f0f0; display: flex; align-items: center; justify-content: space-between; }
+
+  /* Achievement Preview */
+  .achievements-preview {
+    display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 16px;
+  }
+  .ach-preview-card {
+    background: white; border-radius: var(--radius-sm); padding: 16px;
+    box-shadow: var(--shadow-sm); cursor: pointer; transition: all .2s;
+    border-left: 4px solid var(--green-light);
+  }
+  .ach-preview-card:hover { transform: translateY(-2px); box-shadow: var(--shadow); }
+  .ach-avatar { width: 32px; height: 32px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 16px; margin-bottom: 10px; }
+  .ach-preview-card h4 { font-size: 14px; font-weight: 600; margin-bottom: 4px; }
+  .ach-preview-card p { font-size: 12px; color: var(--text-muted); line-height: 1.5; }
+  .ach-likes { display: flex; align-items: center; gap: 4px; font-size: 12px; color: var(--orange); margin-top: 10px; font-weight: 600; }
+
+  /* ===================================================
+     PAGE 2: COURSES
+  =================================================== */
+  .courses-page { padding: 32px 0 60px; }
+  .courses-header {
+    background: var(--green); padding: 40px 24px;
+  }
+  .courses-header-inner { max-width: 1100px; margin: 0 auto; }
+  .courses-header h1 { font-family: 'Ma Shan Zheng', cursive; font-size: 36px; color: white; margin-bottom: 6px; }
+  .courses-header p { color: rgba(255,255,255,0.75); font-size: 15px; margin-bottom: 24px; }
+  .search-bar {
+    display: flex; align-items: center; gap: 12px;
+    background: white; border-radius: 100px; padding: 8px 8px 8px 20px;
+    max-width: 480px; box-shadow: var(--shadow);
+  }
+  .search-bar input { flex: 1; border: none; outline: none; font-family: 'Noto Sans SC', sans-serif; font-size: 15px; color: var(--text); background: transparent; }
+  .search-bar button { background: var(--orange); color: white; border: none; border-radius: 100px; padding: 8px 20px; font-size: 14px; font-weight: 600; cursor: pointer; }
+
+  .courses-layout { display: flex; gap: 24px; max-width: 1100px; margin: 32px auto 0; padding: 0 24px; }
+  .courses-sidebar { width: 220px; flex-shrink: 0; }
+  .sidebar-title { font-size: 13px; font-weight: 700; color: var(--text-muted); letter-spacing: 0.06em; margin-bottom: 12px; }
+  .filter-item {
+    display: flex; align-items: center; gap: 10px;
+    padding: 10px 14px; border-radius: var(--radius-sm); cursor: pointer;
+    font-size: 14px; color: var(--text-soft); transition: all .15s; margin-bottom: 4px;
+  }
+  .filter-item:hover, .filter-item.active { background: var(--green-pale); color: var(--green); font-weight: 600; }
+  .filter-item .filter-icon { font-size: 18px; width: 28px; text-align: center; }
+
+  .courses-main { flex: 1; }
+  .courses-toolbar { display: flex; align-items: center; justify-content: space-between; margin-bottom: 20px; }
+  .courses-count { font-size: 14px; color: var(--text-muted); }
+  .courses-count strong { color: var(--green); }
+
+  /* Course Detail */
+  .course-detail-page { padding: 32px 0 80px; }
+  .breadcrumb { display: flex; align-items: center; gap: 8px; font-size: 13px; color: var(--text-muted); margin-bottom: 24px; cursor: pointer; }
+  .breadcrumb span:hover { color: var(--green); text-decoration: underline; }
+  .course-detail-header {
+    display: grid; grid-template-columns: 1fr 340px; gap: 40px; align-items: start; margin-bottom: 40px;
+  }
+  .course-detail-cover {
+    height: 280px; border-radius: var(--radius-lg); display: flex; align-items: center; justify-content: center;
+    font-size: 100px; background: var(--green-pale); position: relative; overflow: hidden;
+  }
+  .course-detail-info h1 { font-family: 'Ma Shan Zheng', cursive; font-size: 38px; margin-bottom: 12px; }
+  .course-detail-meta { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 16px; }
+  .course-detail-desc { font-size: 15px; color: var(--text-soft); line-height: 1.8; margin-bottom: 24px; }
+  .objectives { background: var(--green-pale); border-radius: var(--radius); padding: 20px; margin-bottom: 20px; }
+  .objectives h4 { font-size: 14px; font-weight: 700; color: var(--green); margin-bottom: 12px; display: flex; align-items: center; gap: 6px; }
+  .objectives li { font-size: 14px; color: var(--text); margin-bottom: 6px; padding-left: 20px; position: relative; list-style: none; }
+  .objectives li::before { content: '✓'; color: var(--green-light); position: absolute; left: 0; font-weight: 700; }
+
+  /* Steps */
+  .steps-section h2 { font-family: 'Ma Shan Zheng', cursive; font-size: 26px; margin-bottom: 20px; }
+  .steps-list { display: flex; flex-direction: column; gap: 16px; }
+  .step-item {
+    display: flex; gap: 20px; background: white; border-radius: var(--radius);
+    padding: 20px; box-shadow: var(--shadow-sm); transition: all .2s;
+  }
+  .step-item:hover { box-shadow: var(--shadow); }
+  .step-num {
+    width: 40px; height: 40px; border-radius: 50%; background: var(--green);
+    color: white; font-weight: 700; font-size: 16px;
+    display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+  }
+  .step-content h4 { font-size: 15px; font-weight: 700; margin-bottom: 6px; }
+  .step-content p { font-size: 14px; color: var(--text-soft); line-height: 1.7; }
+  .step-icon { font-size: 40px; margin-left: auto; }
+
+  /* Materials */
+  .materials-section { background: white; border-radius: var(--radius); padding: 24px; box-shadow: var(--shadow-sm); margin-bottom: 32px; }
+  .materials-section h3 { font-family: 'Ma Shan Zheng', cursive; font-size: 22px; margin-bottom: 16px; }
+  .materials-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
+  .material-item {
+    display: flex; align-items: center; gap: 10px;
+    padding: 10px 14px; border-radius: var(--radius-sm); background: var(--cream);
+    font-size: 14px; cursor: pointer; transition: all .15s; user-select: none;
+  }
+  .material-item.checked { background: var(--green-pale); color: var(--green); }
+  .material-check { width: 20px; height: 20px; border-radius: 6px; border: 2px solid var(--green-light); display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+  .material-item.checked .material-check { background: var(--green); border-color: var(--green); color: white; font-size: 12px; }
+
+  /* Safety tip */
+  .safety-tip {
+    background: #FFF3CD; border: 1px solid #F4C542; border-radius: var(--radius);
+    padding: 16px 20px; display: flex; gap: 12px; align-items: flex-start; margin-top: 24px;
+  }
+  .safety-tip .icon { font-size: 22px; }
+  .safety-tip p { font-size: 14px; color: #7C5A00; line-height: 1.7; }
+
+  /* ===================================================
+     PAGE 3: ACHIEVEMENTS WALL
+  =================================================== */
+  .wall-header {
+    background: linear-gradient(135deg, var(--orange) 0%, var(--orange-light) 100%);
+    padding: 40px 24px;
+  }
+  .wall-header-inner { max-width: 1100px; margin: 0 auto; }
+  .wall-header h1 { font-family: 'Ma Shan Zheng', cursive; font-size: 36px; color: white; margin-bottom: 6px; }
+  .wall-header p { color: rgba(255,255,255,0.8); font-size: 15px; margin-bottom: 20px; }
+  .wall-filters { display: flex; gap: 8px; flex-wrap: wrap; }
+  .wall-filter {
+    padding: 6px 16px; border-radius: 100px; font-size: 13px; font-weight: 600;
+    cursor: pointer; border: 2px solid rgba(255,255,255,0.4); color: rgba(255,255,255,0.85);
+    background: rgba(255,255,255,0.15); transition: all .15s;
+  }
+  .wall-filter.active, .wall-filter:hover { background: white; color: var(--orange); border-color: white; }
+
+  .wall-content { max-width: 1100px; margin: 32px auto; padding: 0 24px 60px; }
+  .wall-grid {
+    columns: 3; column-gap: 16px;
+  }
+  .ach-card {
+    break-inside: avoid; margin-bottom: 16px;
+    background: white; border-radius: var(--radius); padding: 20px;
+    box-shadow: var(--shadow-sm); cursor: pointer; transition: all .25s;
+  }
+  .ach-card:hover { transform: translateY(-3px); box-shadow: var(--shadow-lg); }
+  .ach-card-top { display: flex; align-items: center; gap: 10px; margin-bottom: 12px; }
+  .ach-user-avatar { width: 36px; height: 36px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 18px; flex-shrink: 0; }
+  .ach-user-name { font-size: 14px; font-weight: 600; }
+  .ach-user-class { font-size: 12px; color: var(--text-muted); }
+  .ach-card-course { margin-bottom: 10px; }
+  .ach-card h3 { font-size: 16px; font-weight: 700; margin-bottom: 8px; }
+  .ach-card p { font-size: 13px; color: var(--text-soft); line-height: 1.7; }
+  .ach-card-img {
+    width: 100%; border-radius: var(--radius-sm); margin: 12px 0;
+    background: var(--sand); height: 120px; display: flex; align-items: center; justify-content: center;
+    font-size: 40px;
+  }
+  .ach-card-footer { display: flex; align-items: center; justify-content: space-between; margin-top: 14px; padding-top: 12px; border-top: 1px solid #f0f0f0; }
+  .ach-stars { display: flex; gap: 2px; color: var(--yellow); font-size: 14px; }
+  .like-btn {
+    display: flex; align-items: center; gap: 5px; font-size: 13px; font-weight: 600;
+    color: var(--text-muted); cursor: pointer; padding: 5px 12px; border-radius: 100px;
+    border: 1px solid #e0e0e0; transition: all .2s; background: none;
+  }
+  .like-btn:hover, .like-btn.liked { color: var(--orange); border-color: var(--orange); background: var(--orange-pale); }
+
+  /* ===================================================
+     PAGE 4: SUBMIT ACHIEVEMENT
+  =================================================== */
+  .submit-page { max-width: 720px; margin: 40px auto; padding: 0 24px 80px; }
+  .submit-page h1 { font-family: 'Ma Shan Zheng', cursive; font-size: 34px; margin-bottom: 6px; }
+  .submit-page .sub { font-size: 15px; color: var(--text-muted); margin-bottom: 32px; }
+
+  /* Steps indicator */
+  .step-indicator { display: flex; align-items: center; gap: 0; margin-bottom: 36px; }
+  .step-dot { display: flex; align-items: center; }
+  .step-dot-circle {
+    width: 36px; height: 36px; border-radius: 50%; border: 2px solid var(--sand);
+    display: flex; align-items: center; justify-content: center; font-size: 14px; font-weight: 700;
+    color: var(--text-muted); background: white; transition: all .3s;
+  }
+  .step-dot.done .step-dot-circle { background: var(--green); border-color: var(--green); color: white; }
+  .step-dot.current .step-dot-circle { background: var(--orange); border-color: var(--orange); color: white; box-shadow: 0 0 0 4px var(--orange-pale); }
+  .step-dot-label { font-size: 12px; color: var(--text-muted); margin-top: 4px; text-align: center; }
+  .step-connector { flex: 1; height: 2px; background: var(--sand); min-width: 40px; }
+  .step-connector.done { background: var(--green); }
+  .step-dot-wrap { display: flex; flex-direction: column; align-items: center; }
+
+  /* Form */
+  .form-section { background: white; border-radius: var(--radius); padding: 28px; box-shadow: var(--shadow-sm); margin-bottom: 20px; }
+  .form-section h3 { font-size: 18px; font-weight: 700; margin-bottom: 20px; display: flex; align-items: center; gap: 8px; }
+  .form-group { margin-bottom: 20px; }
+  .form-label { font-size: 14px; font-weight: 600; color: var(--text); margin-bottom: 8px; display: block; }
+  .form-input {
+    width: 100%; padding: 12px 16px; border-radius: var(--radius-sm);
+    border: 2px solid var(--sand); font-family: 'Noto Sans SC', sans-serif;
+    font-size: 14px; color: var(--text); outline: none; transition: border-color .2s;
+    background: var(--cream);
+  }
+  .form-input:focus { border-color: var(--green); background: white; }
+  textarea.form-input { resize: vertical; min-height: 100px; line-height: 1.7; }
+
+  /* Course picker */
+  .course-picker { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+  .course-pick-item {
+    padding: 12px 14px; border-radius: var(--radius-sm); border: 2px solid var(--sand);
+    cursor: pointer; display: flex; align-items: center; gap: 10px; transition: all .15s;
+    font-size: 14px; font-weight: 500; color: var(--text-soft);
+  }
+  .course-pick-item:hover { border-color: var(--green); color: var(--green); }
+  .course-pick-item.selected { border-color: var(--green); background: var(--green-pale); color: var(--green); font-weight: 700; }
+
+  /* Upload */
+  .upload-area {
+    border: 2px dashed var(--sand); border-radius: var(--radius);
+    padding: 32px; text-align: center; cursor: pointer; transition: all .2s;
+    background: var(--cream);
+  }
+  .upload-area:hover { border-color: var(--green); background: var(--green-pale); }
+  .upload-icon { font-size: 40px; margin-bottom: 10px; }
+  .upload-text { font-size: 14px; color: var(--text-muted); }
+  .upload-text strong { color: var(--green); }
+
+  /* Star rating */
+  .star-rating { display: flex; flex-direction: column; gap: 14px; }
+  .star-row { display: flex; align-items: center; gap: 16px; }
+  .star-row-label { font-size: 14px; font-weight: 600; width: 80px; color: var(--text); }
+  .stars { display: flex; gap: 6px; }
+  .star { font-size: 28px; cursor: pointer; transition: transform .1s; color: #ddd; }
+  .star.lit { color: var(--yellow); }
+  .star:hover { transform: scale(1.2); }
+  .star-desc { font-size: 12px; color: var(--text-muted); }
+
+  /* Success screen */
+  .success-screen {
+    text-align: center; padding: 60px 24px;
+    display: none;
+  }
+  .success-screen.show { display: block; animation: bounceIn .5s ease; }
+  @keyframes bounceIn {
+    0% { transform: scale(.8); opacity: 0; }
+    60% { transform: scale(1.05); }
+    100% { transform: scale(1); opacity: 1; }
+  }
+  .success-icon { font-size: 80px; margin-bottom: 20px; }
+  .success-screen h2 { font-family: 'Ma Shan Zheng', cursive; font-size: 34px; margin-bottom: 10px; }
+  .success-screen p { font-size: 16px; color: var(--text-muted); margin-bottom: 30px; }
+
+  /* ===================================================
+     PAGE 5: MY PROFILE
+  =================================================== */
+  .profile-header {
+    background: linear-gradient(135deg, #3d2b1f 0%, var(--brown) 100%);
+    padding: 40px 24px;
+  }
+  .profile-header-inner { max-width: 1100px; margin: 0 auto; display: flex; align-items: center; gap: 24px; }
+  .profile-avatar {
+    width: 80px; height: 80px; border-radius: 50%; background: var(--orange);
+    display: flex; align-items: center; justify-content: center; font-size: 36px;
+    border: 4px solid rgba(255,255,255,0.3); flex-shrink: 0;
+  }
+  .profile-info h1 { font-family: 'Ma Shan Zheng', cursive; font-size: 28px; color: white; margin-bottom: 4px; }
+  .profile-info p { font-size: 14px; color: rgba(255,255,255,0.65); }
+  .profile-stats-bar {
+    display: flex; gap: 24px; margin-top: 16px; padding-top: 16px;
+    border-top: 1px solid rgba(255,255,255,0.15);
+  }
+  .profile-stat { color: white; }
+  .profile-stat-num { font-family: 'Ma Shan Zheng', cursive; font-size: 24px; color: var(--yellow); }
+  .profile-stat-label { font-size: 12px; color: rgba(255,255,255,0.6); }
+
+  .profile-content { max-width: 1100px; margin: 32px auto; padding: 0 24px 60px; display: grid; grid-template-columns: 1fr 300px; gap: 24px; }
+
+  .timeline { }
+  .timeline-title { font-family: 'Ma Shan Zheng', cursive; font-size: 24px; margin-bottom: 20px; }
+  .timeline-item { display: flex; gap: 16px; margin-bottom: 20px; }
+  .timeline-dot-wrap { display: flex; flex-direction: column; align-items: center; }
+  .timeline-dot { width: 12px; height: 12px; border-radius: 50%; background: var(--green-light); flex-shrink: 0; margin-top: 4px; }
+  .timeline-line { width: 2px; flex: 1; background: var(--sand); margin-top: 4px; }
+  .timeline-card { flex: 1; background: white; border-radius: var(--radius); padding: 18px; box-shadow: var(--shadow-sm); cursor: pointer; transition: all .2s; margin-bottom: 4px; }
+  .timeline-card:hover { box-shadow: var(--shadow); transform: translateX(4px); }
+  .timeline-date { font-size: 12px; color: var(--text-muted); margin-bottom: 6px; }
+  .timeline-card h4 { font-size: 15px; font-weight: 700; margin-bottom: 4px; }
+  .timeline-card p { font-size: 13px; color: var(--text-soft); line-height: 1.6; }
+  .timeline-card-footer { display: flex; gap: 8px; margin-top: 10px; align-items: center; }
+
+  /* Eval chart */
+  .eval-card { background: white; border-radius: var(--radius); padding: 24px; box-shadow: var(--shadow-sm); margin-bottom: 20px; }
+  .eval-card h3 { font-family: 'Ma Shan Zheng', cursive; font-size: 20px; margin-bottom: 16px; }
+  .eval-bar-row { margin-bottom: 14px; }
+  .eval-bar-top { display: flex; justify-content: space-between; font-size: 13px; margin-bottom: 6px; }
+  .eval-bar-track { height: 10px; background: var(--sand); border-radius: 100px; overflow: hidden; }
+  .eval-bar-fill { height: 100%; border-radius: 100px; background: var(--green); transition: width 1s ease; }
+  .badges-card { background: white; border-radius: var(--radius); padding: 24px; box-shadow: var(--shadow-sm); }
+  .badges-card h3 { font-family: 'Ma Shan Zheng', cursive; font-size: 20px; margin-bottom: 16px; }
+  .badges-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
+  .badge-item { text-align: center; padding: 12px 8px; background: var(--cream); border-radius: var(--radius-sm); }
+  .badge-icon { font-size: 28px; margin-bottom: 4px; }
+  .badge-name { font-size: 11px; color: var(--text-soft); font-weight: 600; }
+
+  /* ===== FLOATING NAV (mobile) ===== */
+  .float-nav {
+    display: none; position: fixed; bottom: 0; left: 0; right: 0; z-index: 200;
+    background: white; border-top: 2px solid var(--sand); padding: 8px 0 12px;
+    justify-content: space-around;
+  }
+  .float-nav-item { display: flex; flex-direction: column; align-items: center; gap: 3px; cursor: pointer; padding: 4px 12px; border-radius: var(--radius-sm); }
+  .float-nav-item .fn-icon { font-size: 22px; }
+  .float-nav-item .fn-label { font-size: 10px; color: var(--text-muted); font-weight: 600; }
+  .float-nav-item.active .fn-label { color: var(--green); }
+
+  @media (max-width: 768px) {
+    nav .nav-links { display: none; }
+    .float-nav { display: flex; }
+    .hero h1 { font-size: 36px; }
+    .hero-deco { display: none; }
+    .courses-layout { flex-direction: column; }
+    .courses-sidebar { width: 100%; }
+    .course-detail-header { grid-template-columns: 1fr; }
+    .wall-grid { columns: 2; }
+    .materials-grid { grid-template-columns: 1fr 1fr; }
+    .profile-content { grid-template-columns: 1fr; }
+    body { padding-bottom: 60px; }
+  }
+  @media (max-width: 480px) {
+    .wall-grid { columns: 1; }
+    .course-picker { grid-template-columns: 1fr; }
+  }
+</style>
+</head>
+<body>
+
+<!-- NAV -->
+<nav>
+  <div class="nav-logo" onclick="goPage('home')">
+    <span class="icon">🌱</span>劳动课堂
+  </div>
+  <div class="nav-links">
+    <button class="nav-link active" onclick="goPage('home'); setActiveNav(this)">首页</button>
+    <button class="nav-link" onclick="goPage('courses'); setActiveNav(this)">课程学习</button>
+    <button class="nav-link" onclick="goPage('wall'); setActiveNav(this)">成果展示墙</button>
+    <button class="nav-link" onclick="goPage('profile'); setActiveNav(this)">我的档案</button>
+  </div>
+  <div class="nav-user" title="小明同学">明</div>
+</nav>
+
+<!-- ==================== PAGE: HOME ==================== -->
+<div id="home" class="page active">
+
+  <!-- Hero -->
+  <div class="hero">
+    <div class="hero-inner">
+      <div class="hero-badge">🏫 上海市义务教育劳动课程平台</div>
+      <h1>用双手创造<br><span>美好生活</span></h1>
+      <p>探索六七年级劳动公共项目，记录你的每一次劳动成果，让努力被看见！</p>
+      <div class="hero-actions">
+        <button class="btn btn-primary" onclick="goPage('courses'); setActiveNav(document.querySelectorAll('.nav-link')[1])">🔍 浏览课程</button>
+        <button class="btn" style="background:rgba(255,255,255,0.15);color:white;border:2px solid rgba(255,255,255,0.3)" onclick="goPage('submit'); setActiveNav(null)">✍️ 上传成果</button>
+      </div>
+      <div class="hero-stats">
+        <div class="stat"><div class="stat-num">72</div><div class="stat-label">公共项目</div></div>
+        <div class="stat"><div class="stat-num">10</div><div class="stat-label">任务群</div></div>
+        <div class="stat"><div class="stat-num">3</div><div class="stat-label">劳动类型</div></div>
+      </div>
+    </div>
+    <div class="hero-deco">🌾</div>
+  </div>
+
+  <!-- Grade Select -->
+  <div class="grade-select">
+    <div class="grade-select-inner">
+      <div class="grade-label">选择年级</div>
+      <div class="grade-tabs">
+        <div class="grade-tab active" onclick="setGrade(this, 6)">六年级</div>
+        <div class="grade-tab" onclick="setGrade(this, 7)">七年级</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Featured Courses -->
+  <div class="home-section" style="background: var(--sand)">
+    <div class="container">
+      <div class="section-title">🌟 推荐课程</div>
+      <div class="section-subtitle">根据当前年级精选的热门劳动公共项目</div>
+      <div class="courses-grid" id="home-courses"></div>
+      <div style="text-align:center; margin-top:28px">
+        <button class="btn btn-ghost" onclick="goPage('courses'); setActiveNav(document.querySelectorAll('.nav-link')[1])">查看全部课程 →</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Latest Achievements -->
+  <div class="home-section">
+    <div class="container">
+      <div class="section-title">🎨 同学们的作品</div>
+      <div class="section-subtitle">最新上传的劳动成果，快来为大家点赞吧！</div>
+      <div class="achievements-preview" id="home-achievements"></div>
+      <div style="text-align:center; margin-top:28px">
+        <button class="btn btn-ghost" onclick="goPage('wall'); setActiveNav(document.querySelectorAll('.nav-link')[2])">查看成果展示墙 →</button>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<!-- ==================== PAGE: COURSES ==================== -->
+<div id="courses" class="page">
+  <div class="courses-header">
+    <div class="courses-header-inner">
+      <h1>🌿 课程学习</h1>
+      <p>上海市六七年级劳动公共项目全收录，一起来动手实践吧！</p>
+      <div class="search-bar">
+        <input type="text" placeholder="搜索课程，如「包饺子」「整理收纳」…" id="search-input" oninput="filterCourses()">
+        <button onclick="filterCourses()">搜索</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="courses-layout">
+    <div class="courses-sidebar">
+      <div class="sidebar-title">任务群</div>
+      <div id="sidebar-filters"></div>
+    </div>
+    <div class="courses-main">
+      <div class="courses-toolbar">
+        <div class="courses-count">共 <strong id="courses-count">0</strong> 个项目</div>
+      </div>
+      <div class="courses-grid" id="courses-grid"></div>
+    </div>
+  </div>
+</div>
+
+<!-- ==================== PAGE: COURSE DETAIL ==================== -->
+<div id="course-detail" class="page">
+  <div class="container">
+    <div class="course-detail-page">
+      <div class="breadcrumb">
+        <span onclick="goPage('courses'); setActiveNav(document.querySelectorAll('.nav-link')[1])">课程学习</span>
+        <span>›</span>
+        <span id="detail-breadcrumb">课程详情</span>
+      </div>
+      <div class="course-detail-header">
+        <div>
+          <div class="course-detail-cover" id="detail-cover">🌱</div>
+        </div>
+        <div class="course-detail-info">
+          <div class="course-detail-meta" id="detail-meta"></div>
+          <h1 class="course-detail-info" id="detail-title"></h1>
+          <p class="course-detail-desc" id="detail-desc"></p>
+          <div class="objectives" id="detail-objectives"></div>
+          <button class="btn btn-orange" style="width:100%" onclick="goPage('submit')">✍️ 我要参与，上传成果</button>
+        </div>
+      </div>
+      <div class="materials-section" id="detail-materials"></div>
+      <div class="steps-section">
+        <h2>📋 操作步骤</h2>
+        <div class="steps-list" id="detail-steps"></div>
+      </div>
+      <div class="safety-tip" id="detail-safety"></div>
+      <div id="course-simulator" style="margin-top:32px"></div>
+    </div>
+  </div>
+</div>
+
+<!-- ==================== PAGE: ACHIEVEMENT WALL ==================== -->
+<div id="wall" class="page">
+  <div class="wall-header">
+    <div class="wall-header-inner">
+      <h1>🎨 成果展示墙</h1>
+      <p>同学们的劳动成果都在这里，快来为大家点赞吧！</p>
+      <div class="wall-filters" id="wall-filters"></div>
+    </div>
+  </div>
+  <div class="wall-content">
+    <div class="wall-grid" id="wall-grid"></div>
+    <div style="text-align:center;margin-top:16px">
+      <button class="btn btn-ghost">加载更多 ↓</button>
+    </div>
+  </div>
+</div>
+
+<!-- ==================== PAGE: SUBMIT ==================== -->
+<div id="submit" class="page">
+  <div class="submit-page">
+    <div id="submit-form-area">
+      <h1>✍️ 上传劳动成果</h1>
+      <p class="sub">记录你的劳动过程和成果，让大家看到你的努力！</p>
+
+      <!-- Step indicator -->
+      <div class="step-indicator">
+        <div class="step-dot-wrap"><div class="step-dot current" id="sdot-1"><div class="step-dot-circle">1</div></div><div class="step-dot-label">选择项目</div></div>
+        <div class="step-connector" id="scon-1"></div>
+        <div class="step-dot-wrap"><div class="step-dot" id="sdot-2"><div class="step-dot-circle">2</div></div><div class="step-dot-label">填写成果</div></div>
+        <div class="step-connector" id="scon-2"></div>
+        <div class="step-dot-wrap"><div class="step-dot" id="sdot-3"><div class="step-dot-circle">3</div></div><div class="step-dot-label">自我评价</div></div>
+        <div class="step-connector" id="scon-3"></div>
+        <div class="step-dot-wrap"><div class="step-dot" id="sdot-4"><div class="step-dot-circle">4</div></div><div class="step-dot-label">确认提交</div></div>
+      </div>
+
+      <!-- Step 1 -->
+      <div id="step-1-content">
+        <div class="form-section">
+          <h3>🌿 选择劳动项目</h3>
+          <div class="course-picker" id="course-picker"></div>
+        </div>
+        <div style="display:flex; justify-content:flex-end">
+          <button class="btn btn-primary" onclick="submitStep(2)">下一步 →</button>
+        </div>
+      </div>
+
+      <!-- Step 2 -->
+      <div id="step-2-content" style="display:none">
+        <div class="form-section">
+          <h3>📝 描述你的成果</h3>
+          <div class="form-group">
+            <label class="form-label">成果标题 <span style="color:var(--orange)">*</span></label>
+            <input type="text" class="form-input" placeholder="给你的成果起个名字，如「第一次做蛋炒饭」">
+          </div>
+          <div class="form-group">
+            <label class="form-label">成果描述 <span style="color:var(--orange)">*</span></label>
+            <textarea class="form-input" placeholder="描述一下你的劳动过程、遇到的困难、学到的东西…&#10;&#10;例如：今天我第一次独立炒了一盘蛋炒饭。刚开始火候没控制好，蛋有点焦了…"></textarea>
+          </div>
+          <div class="form-group">
+            <label class="form-label">上传照片（选填，最多5张）</label>
+            <div class="upload-area">
+              <div class="upload-icon">📷</div>
+              <div class="upload-text">点击这里上传照片，或把照片拖到这里<br><strong>支持 JPG / PNG，每张不超过 5MB</strong></div>
+            </div>
+          </div>
+          <div class="form-group">
+            <label class="form-label">是否公开展示</label>
+            <div style="display:flex;gap:10px">
+              <label style="display:flex;align-items:center;gap:6px;cursor:pointer;font-size:14px">
+                <input type="radio" name="public" value="yes" checked> 公开（展示在成果墙上）
+              </label>
+              <label style="display:flex;align-items:center;gap:6px;cursor:pointer;font-size:14px">
+                <input type="radio" name="public" value="no"> 仅自己可见
+              </label>
+            </div>
+          </div>
+        </div>
+        <div style="display:flex; justify-content:space-between">
+          <button class="btn btn-ghost" onclick="submitStep(1)">← 上一步</button>
+          <button class="btn btn-primary" onclick="submitStep(3)">下一步 →</button>
+        </div>
+      </div>
+
+      <!-- Step 3 -->
+      <div id="step-3-content" style="display:none">
+        <div class="form-section">
+          <h3>⭐ 自我评价</h3>
+          <p style="font-size:13px;color:var(--text-muted);margin-bottom:20px">认真地给自己的这次劳动打个分吧！诚实的评价能帮助你更好地进步。</p>
+          <div class="star-rating">
+            <div class="star-row">
+              <div class="star-row-label">劳动态度</div>
+              <div class="stars" id="stars-1">
+                <span class="star" onclick="setStar(1,1)">★</span>
+                <span class="star" onclick="setStar(1,2)">★</span>
+                <span class="star" onclick="setStar(1,3)">★</span>
+                <span class="star" onclick="setStar(1,4)">★</span>
+                <span class="star" onclick="setStar(1,5)">★</span>
+              </div>
+              <div class="star-desc" id="star-desc-1">点击星星评分</div>
+            </div>
+            <div class="star-row">
+              <div class="star-row-label">劳动技能</div>
+              <div class="stars" id="stars-2">
+                <span class="star" onclick="setStar(2,1)">★</span>
+                <span class="star" onclick="setStar(2,2)">★</span>
+                <span class="star" onclick="setStar(2,3)">★</span>
+                <span class="star" onclick="setStar(2,4)">★</span>
+                <span class="star" onclick="setStar(2,5)">★</span>
+              </div>
+              <div class="star-desc" id="star-desc-2">点击星星评分</div>
+            </div>
+            <div class="star-row">
+              <div class="star-row-label">劳动成果</div>
+              <div class="stars" id="stars-3">
+                <span class="star" onclick="setStar(3,1)">★</span>
+                <span class="star" onclick="setStar(3,2)">★</span>
+                <span class="star" onclick="setStar(3,3)">★</span>
+                <span class="star" onclick="setStar(3,4)">★</span>
+                <span class="star" onclick="setStar(3,5)">★</span>
+              </div>
+              <div class="star-desc" id="star-desc-3">点击星星评分</div>
+            </div>
+          </div>
+          <div class="form-group" style="margin-top:20px">
+            <label class="form-label">心得体会（选填）</label>
+            <textarea class="form-input" placeholder="这次劳动让你有什么感想？学到了什么？下次想改进什么？"></textarea>
+          </div>
+        </div>
+        <div style="display:flex; justify-content:space-between">
+          <button class="btn btn-ghost" onclick="submitStep(2)">← 上一步</button>
+          <button class="btn btn-primary" onclick="submitStep(4)">预览提交 →</button>
+        </div>
+      </div>
+
+      <!-- Step 4 -->
+      <div id="step-4-content" style="display:none">
+        <div class="form-section">
+          <h3>✅ 确认提交</h3>
+          <div style="background:var(--cream);border-radius:var(--radius-sm);padding:16px;margin-bottom:16px">
+            <div style="font-size:13px;color:var(--text-muted);margin-bottom:4px">劳动项目</div>
+            <div style="font-size:15px;font-weight:700">🍳 蛋炒饭制作</div>
+          </div>
+          <div style="background:var(--cream);border-radius:var(--radius-sm);padding:16px;margin-bottom:16px">
+            <div style="font-size:13px;color:var(--text-muted);margin-bottom:4px">成果标题</div>
+            <div style="font-size:15px;font-weight:700">第一次独立做蛋炒饭！</div>
+          </div>
+          <div style="background:var(--cream);border-radius:var(--radius-sm);padding:16px">
+            <div style="font-size:13px;color:var(--text-muted);margin-bottom:8px">自我评价</div>
+            <div style="display:flex;gap:16px">
+              <div style="font-size:13px">态度 <span style="color:var(--yellow)">★★★★★</span></div>
+              <div style="font-size:13px">技能 <span style="color:var(--yellow)">★★★★☆</span></div>
+              <div style="font-size:13px">成果 <span style="color:var(--yellow)">★★★★☆</span></div>
+            </div>
+          </div>
+        </div>
+        <div style="display:flex; justify-content:space-between">
+          <button class="btn btn-ghost" onclick="submitStep(3)">← 修改</button>
+          <button class="btn btn-orange" onclick="submitFinal()">🎉 提交成果</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Success -->
+    <div class="success-screen" id="submit-success">
+      <div class="success-icon">🎉</div>
+      <h2>太棒了！成果提交成功！</h2>
+      <p>你的劳动成果已经出现在成果展示墙上了，<br>快去看看吧！</p>
+      <div style="display:flex;gap:12px;justify-content:center">
+        <button class="btn btn-primary" onclick="goPage('wall'); setActiveNav(document.querySelectorAll('.nav-link')[2])">🎨 去展示墙看看</button>
+        <button class="btn btn-ghost" onclick="goPage('profile'); setActiveNav(document.querySelectorAll('.nav-link')[3])">📁 我的档案</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ==================== PAGE: PROFILE ==================== -->
+<div id="profile" class="page">
+  <div class="profile-header">
+    <div class="profile-header-inner">
+      <div class="profile-avatar">🌟</div>
+      <div class="profile-info">
+        <h1>小明同学</h1>
+        <p>六年级 3 班 · 学号 2024060312</p>
+        <div class="profile-stats-bar">
+          <div class="profile-stat"><div class="profile-stat-num">8</div><div class="profile-stat-label">完成项目</div></div>
+          <div class="profile-stat"><div class="profile-stat-num">47</div><div class="profile-stat-label">获得点赞</div></div>
+          <div class="profile-stat"><div class="profile-stat-num">3</div><div class="profile-stat-label">获得徽章</div></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="profile-content">
+    <!-- Timeline -->
+    <div class="timeline">
+      <div class="timeline-title">📅 我的劳动记录</div>
+      <div id="timeline-list"></div>
+    </div>
+
+    <!-- Right column -->
+    <div>
+      <div class="eval-card">
+        <h3>📊 综合评价</h3>
+        <div class="eval-bar-row">
+          <div class="eval-bar-top"><span>劳动态度</span><span style="color:var(--green);font-weight:700">4.8 / 5</span></div>
+          <div class="eval-bar-track"><div class="eval-bar-fill" style="width:96%"></div></div>
+        </div>
+        <div class="eval-bar-row">
+          <div class="eval-bar-top"><span>劳动技能</span><span style="color:var(--green);font-weight:700">4.2 / 5</span></div>
+          <div class="eval-bar-track"><div class="eval-bar-fill" style="width:84%"></div></div>
+        </div>
+        <div class="eval-bar-row">
+          <div class="eval-bar-top"><span>劳动成果</span><span style="color:var(--green);font-weight:700">4.5 / 5</span></div>
+          <div class="eval-bar-track"><div class="eval-bar-fill" style="width:90%"></div></div>
+        </div>
+      </div>
+      <div class="badges-card">
+        <h3>🏅 我的徽章</h3>
+        <div class="badges-grid">
+          <div class="badge-item"><div class="badge-icon">🍳</div><div class="badge-name">烹饪新星</div></div>
+          <div class="badge-item"><div class="badge-icon">🌱</div><div class="badge-name">种植达人</div></div>
+          <div class="badge-item"><div class="badge-icon">✂️</div><div class="badge-name">手工能手</div></div>
+          <div class="badge-item" style="opacity:.35"><div class="badge-icon">🔧</div><div class="badge-name">维修小将</div></div>
+          <div class="badge-item" style="opacity:.35"><div class="badge-icon">🤝</div><div class="badge-name">志愿之星</div></div>
+          <div class="badge-item" style="opacity:.35"><div class="badge-icon">💻</div><div class="badge-name">科技先锋</div></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Float Nav (mobile) -->
+<div class="float-nav">
+  <div class="float-nav-item active" onclick="goPage('home')"><span class="fn-icon">🏠</span><span class="fn-label">首页</span></div>
+  <div class="float-nav-item" onclick="goPage('courses')"><span class="fn-icon">📚</span><span class="fn-label">课程</span></div>
+  <div class="float-nav-item" onclick="goPage('wall')"><span class="fn-icon">🎨</span><span class="fn-label">展示墙</span></div>
+  <div class="float-nav-item" onclick="goPage('submit')"><span class="fn-icon">✍️</span><span class="fn-label">上传</span></div>
+  <div class="float-nav-item" onclick="goPage('profile')"><span class="fn-icon">👤</span><span class="fn-label">我的</span></div>
+</div>
+
+<script>
+// ===== DATA =====
+const TASK_GROUPS = [
+  { id: 'all',       name: '全部',               icon: '🌿' },
+  { id: 'tidy',     name: '整理与收纳',         icon: '🧳' },
+  { id: 'craft',    name: '传统工艺制作',       icon: '✂️' },
+  { id: 'farm',     name: '农业生产劳动',       icon: '🌸' },
+  { id: 'industry', name: '工业生产劳动',       icon: '🔩' },
+  { id: 'appliance',name: '家用器具使用与维护', icon: '🔌' },
+  { id: 'cook',     name: '烹饪与营养',         icon: '🍞' },
+];
+
+// 上半学期 semester:1，下半学期 semester:2
+const COURSES = [
+  {
+    id: 1, grade: 6, semester: 1, group: 'tidy',
+    title: '行李箱整理', emoji: '🧳', color: '#EAF4FF',
+    desc: '学习科学规划行李箱空间，掌握不同物品的折叠与收纳技巧，做到出行整洁有序、不超重。',
+    objectives: [
+      '了解行李箱收纳的基本原则（重底轻上、分区归类）',
+      '掌握衣物卷叠法与平叠法的适用场景',
+      '能独立完成一次旅行行李箱整理，并控制在规定重量内',
+    ],
+    materials: ['行李箱（或大背包）', '各类衣物若干件', '收纳袋/压缩袋', '鞋袋', '洗漱包', '衣物清单表'],
+    steps: [
+      { title: '列出清单', desc: '出行前根据天数和目的地气候，列出所需衣物与用品清单，避免遗漏或多带。', icon: '📋' },
+      { title: '分类备物', desc: '按「衣物」「洗漱」「证件」「电子设备」「备用药」五类将物品摆放于床上。', icon: '📦' },
+      { title: '打底层', desc: '将较重物品（鞋子装入鞋袋）紧贴箱底轮子一侧横向排列，充当稳定重心的底层。', icon: '👟' },
+      { title: '卷叠衣物', desc: 'T恤、裤子采用卷叠法卷成圆筒状，竖立摆放在中间层，既节省空间又减少褶皱。', icon: '👕' },
+      { title: '填充缝隙', desc: '用袜子、内衣等小件物品填充各卷筒之间的空隙，最大化利用空间。', icon: '🧦' },
+      { title: '顶层轻件', desc: '洗漱包、易碎物品放顶层，便于取用；证件夹放箱盖内袋，一键可取。', icon: '🧴' },
+    ],
+    safety: '整理时注意不要将重物堆叠过高以免倾倒；拉链锁扣前确认所有物品已在箱内，避免夹坏物品。',
+    type: '日常生活劳动',
+  },
+  {
+    id: 2, grade: 6, semester: 1, group: 'craft',
+    title: '布艺挂件的设计与制作', emoji: '🎀', color: '#FCE4EC',
+    desc: '运用布料裁剪、缝合等基础布艺技法，设计并制作一款富有个性的装饰挂件，感受手工创作的乐趣。',
+    objectives: [
+      '了解常见布料的种类与特性，能合理选材',
+      '掌握手针基础缝合针法（平针、回针）',
+      '完成一件有个人设计风格的布艺挂件作品',
+    ],
+    materials: ['棉布或无纺布若干', '剪刀', '手缝针与线', '填充棉', '挂绳或丝带', '铅笔/粉笔', '图案纸样'],
+    steps: [
+      { title: '构思设计', desc: '在纸上画出挂件的造型草图（如星形、动物、花朵），确定正反面图案与配色方案。', icon: '✏️' },
+      { title: '制作纸样', desc: '将设计图转绘到硬纸板上，剪出纸样模板，留出0.5cm缝份。', icon: '📐' },
+      { title: '裁剪布料', desc: '将纸样放在布料上，用粉笔描出轮廓，沿缝份线剪出正反两片布。', icon: '✂️' },
+      { title: '正面相对缝合', desc: '正面相对叠放，沿边缘用平针或回针缝合，留5cm返口不缝。', icon: '🪡' },
+      { title: '翻面填充', desc: '从返口翻出正面，用铅笔末端辅助撑开边角，填入适量棉花至饱满。', icon: '🧸' },
+      { title: '封口装饰', desc: '用藏针缝封住返口，在顶部缝上挂绳，可加绣花或贴布装饰完成。', icon: '🎀' },
+    ],
+    safety: '使用剪刀时注意刀口朝外，不对向他人；穿针时将针头插入针包，避免针散落桌面伤手。',
+    type: '生产劳动',
+  },
+  {
+    id: 3, grade: 6, semester: 1, group: 'craft',
+    title: '布艺小包的设计与制作', emoji: '👜', color: '#F3E5F5',
+    desc: '在布艺挂件的基础上进阶，设计并缝制一款实用的布艺小包，综合运用量、画、剪、缝多种技能。',
+    objectives: [
+      '能根据用途（零钱包/手机袋/收纳包）自主设计布艺小包',
+      '掌握拉链或按扣的安装方法',
+      '完成一件兼具美观与实用的布艺小包成品',
+    ],
+    materials: ['棉布或帆布（正反面各1片）', '拉链或按扣', '剪刀', '手缝针与线（或缝纫机）', '尺子', '粉笔', '装饰贴布/绣线（可选）'],
+    steps: [
+      { title: '确定尺寸', desc: '根据用途确定小包尺寸，画出展开图：包底+前片+后片，加缝份1cm。', icon: '📏' },
+      { title: '裁剪布片', desc: '将展开图转移至布料，准确裁出所需各片，可同时裁出内衬布。', icon: '✂️' },
+      { title: '安装拉链', desc: '将拉链正面朝下放在包口布料上，对齐后用平针疏缝固定，再回针缝牢固。', icon: '🔖' },
+      { title: '缝合侧缝', desc: '将前后片正面相对对齐，从底部开始沿侧边缝合，角落处打倒针加固。', icon: '🪡' },
+      { title: '处理边角', desc: '剪去四角缝份处的多余布料（斜剪），翻面后边角更加平整饱满。', icon: '📐' },
+      { title: '翻面整烫', desc: '从拉链口翻出正面，用熨斗（有大人协助）轻轻整烫，添加个性装饰。', icon: '👜' },
+    ],
+    safety: '使用熨斗需在大人陪同下操作，注意防烫；剪拉链时不要剪断拉链齿，避免拉链失效。',
+    type: '生产劳动',
+  },
+  {
+    id: 4, grade: 6, semester: 1, group: 'farm',
+    title: '水仙花雕刻及养护', emoji: '🌸', color: '#E8F5E9',
+    desc: '学习水仙花鳞茎的雕刻造型技艺，并掌握水养管理方法，欣赏水仙从雕刻到开花的完整生命历程。',
+    objectives: [
+      '了解水仙花的品种特点与文化寓意',
+      '掌握水仙鳞茎的基本雕刻手法（螃蟹式、玉玲珑式）',
+      '能独立完成水仙的雕刻、水养与定期养护',
+    ],
+    materials: ['水仙鳞茎1-2个', '雕刻刀（专用）', '浅口水仙盆', '小石子/卵石', '清水', '牙签（固定用）', '棉花（保湿）'],
+    steps: [
+      { title: '认识水仙', desc: '观察水仙鳞茎结构，分辨主球、侧球（脚芽）、芽尖的位置，了解雕刻朝向。', icon: '🌱' },
+      { title: '剥除外皮', desc: '用刀小心去除鳞茎褐色外皮，露出白色鳞片，注意不要伤及芽尖。', icon: '🔪' },
+      { title: '雕刻造型', desc: '根据选定造型（如螃蟹式），用雕刻刀在叶芽基部作浅弧形切口，使叶片舒展弯曲。', icon: '🪷' },
+      { title: '浸水去液', desc: '雕刻完成后放入清水中浸泡1-2小时，冲去切口渗出的黏液，防止腐烂。', icon: '💧' },
+      { title: '摆盆固定', desc: '在浅盆中铺卵石，将水仙雕刻面朝上置于石间固定，注水至鳞茎底部。', icon: '🪨' },
+      { title: '日常养护', desc: '放置于散光处，每1-2天换水一次，水温与室温相近；夜间移至低温处可延长花期。', icon: '☀️' },
+    ],
+    safety: '雕刻刀锋利，使用时刀刃朝外、向下切，手指不放在刀口前方；初学者可请老师或家长在旁指导。',
+    type: '生产劳动',
+  },
+  {
+    id: 5, grade: 6, semester: 2, group: 'craft',
+    title: '中国结的编织', emoji: '🪢', color: '#FFF8E1',
+    desc: '学习中国传统结艺，掌握平结、双联结等基础结法，编织一款寓意吉祥的中国结挂饰。',
+    objectives: [
+      '了解中国结的历史渊源与吉祥寓意',
+      '掌握平结、双联结、纽扣结等3种以上基础结法',
+      '独立完成一件完整的中国结挂饰作品',
+    ],
+    materials: ['红色编织绳（2mm，约3米）', '金色流苏', '剪刀', '打火机（收口用，需大人协助）', '珠子/玉石（装饰，可选）', '结艺板与大头针（辅助定型）'],
+    steps: [
+      { title: '认识绳材', desc: '了解不同粗细编织绳的特性，本次选用2mm红绳，剪取所需长度并用火轻烫两端防散。', icon: '🪢' },
+      { title: '编双联结', desc: '取绳对折，左绳在右绳上绕一圈打结，再右绳绕左绳打结，拉紧即成双联结，作为起始节点。', icon: '🔴' },
+      { title: '编平结主体', desc: '以中心绳为轴，左右各取一绳交替编平结：左绳压中→绕右→从右绳下穿出，反向重复。', icon: '🪡' },
+      { title: '穿入装饰珠', desc: '编至适当长度后，将中心绳穿入装饰珠，继续在珠下方编平结固定。', icon: '📿' },
+      { title: '收尾结', desc: '末端编纽扣结或双联结收尾，用打火机（大人协助）轻烫绳头防散开。', icon: '🔥' },
+      { title: '装配流苏', desc: '在结的下端穿入流苏，调整整体长度与形态，完成挂饰制作。', icon: '🎋' },
+    ],
+    safety: '使用打火机收口须有大人在场；剪绳时剪刀开口朝外，手指远离刀刃；编结时注意不要拉绳过猛伤到手指。',
+    type: '生产劳动',
+  },
+  {
+    id: 6, grade: 6, semester: 2, group: 'industry',
+    title: '金属丝花瓶架的设计与制作', emoji: '🔩', color: '#F5F5F5',
+    desc: '运用金属丝的弯折、缠绕、成形等技法，设计并制作一款能稳固支撑玻璃瓶的金属丝花瓶架。',
+    objectives: [
+      '认识铝丝、铁丝等金属丝材料的特性与用途',
+      '掌握金属丝的测量、弯折、缠绕等基本加工技法',
+      '能根据瓶子尺寸自主设计并完成一件花瓶架',
+    ],
+    materials: ['铝丝或软铁丝（1.5-2mm，约2米）', '圆嘴钳', '平嘴钳', '斜嘴钳（剪丝）', '量尺', '玻璃瓶（用于比对尺寸）', '设计草图纸'],
+    steps: [
+      { title: '设计草图', desc: '先量出玻璃瓶直径与高度，在纸上画出花瓶架的正视图与俯视图，标注各部分尺寸。', icon: '📐' },
+      { title: '截取金属丝', desc: '根据草图计算所需金属丝长度（含弯折余量），用斜嘴钳截取，端头用平嘴钳压平防刺手。', icon: '✂️' },
+      { title: '制作底部支撑圈', desc: '将金属丝绕瓶底弯成圆形托圈，交叉点用细丝缠绕3-4圈固定，确保水平放置不摇晃。', icon: '⭕' },
+      { title: '弯折立柱', desc: '在托圈上等距标出3个点，分别向上弯折立柱，用圆嘴钳压出弧形，高度与瓶颈齐。', icon: '🔧' },
+      { title: '制作颈部固定圈', desc: '按瓶颈直径弯出上部固定圈，将三根立柱末端向内弯折后与颈圈缠绕固定。', icon: '🔩' },
+      { title: '调整与装饰', desc: '将瓶子放入架中，调整各处使其稳固垂直，可在立柱上缠绕彩色丝线或细铜丝装饰。', icon: '🌿' },
+    ],
+    safety: '金属丝截断后端头锋利，操作全程佩戴手套或用布保护手指；钳子使用时不要夹手，注意钳口方向。',
+    type: '生产劳动',
+  },
+  {
+    id: 7, grade: 6, semester: 2, group: 'appliance',
+    title: '电烤箱的使用与维护', emoji: '🔌', color: '#FFF3E0',
+    desc: '认识电烤箱的结构与功能，学习正确的使用方法和日常维护，为烘焙实践打好安全基础。',
+    objectives: [
+      '认识电烤箱各部件名称与功能（上下管、旋钮、烤网、烤盘等）',
+      '掌握预热、温度设定、定时操作等基本使用流程',
+      '学会烤箱的日常清洁与安全使用规范',
+    ],
+    materials: ['电烤箱', '隔热手套', '烤盘与烤网', '烤箱温度计（可选）', '湿布（清洁用）', '中性清洁剂'],
+    steps: [
+      { title: '认识结构', desc: '观察并说出烤箱各部件：加热管（上/下）、调温旋钮、定时器、烤盘、烤网、玻璃门。', icon: '👀' },
+      { title: '放置与通电', desc: '确认烤箱放在隔热稳固台面，与墙壁保持10cm以上间距，插上电源检查指示灯。', icon: '🔌' },
+      { title: '预热操作', desc: '根据食谱设定温度（如180℃），先空烤预热10分钟，等烤箱内部达到目标温度。', icon: '🌡️' },
+      { title: '放入食物', desc: '戴好隔热手套打开烤箱门，将烤盘推入合适层（一般中层），轻轻关上门。', icon: '🧤' },
+      { title: '监控完成', desc: '通过玻璃门观察食物状态，设定定时器，到时用隔热手套取出，放在隔热垫上。', icon: '⏱️' },
+      { title: '清洁维护', desc: '完全冷却后，取出烤盘和烤网用温水加中性清洁剂清洗，用湿布擦拭内腔（断电后），晾干备用。', icon: '🧹' },
+    ],
+    safety: '操作烤箱全程须有大人在场；取放食物必须佩戴隔热手套；烤箱工作时玻璃门温度极高，切勿触碰；使用完毕及时断电。',
+    type: '日常生活劳动',
+  },
+  {
+    id: 8, grade: 6, semester: 2, group: 'cook',
+    title: '面包的烘焙', emoji: '🍞', color: '#FFF8E1',
+    desc: '综合运用电烤箱，学习面包面团的揉制、发酵与烘焙全过程，体验从原料到成品的完整烘焙乐趣。',
+    objectives: [
+      '了解面粉、酵母、黄油等烘焙原料的作用',
+      '掌握手工揉面、判断发酵状态的方法',
+      '能独立完成一次简单面包的全程烘焙制作',
+    ],
+    materials: ['高筋面粉250g', '酵母3g', '糖20g', '盐3g', '温水160ml', '黄油20g', '鸡蛋液（表面刷色）', '烤箱', '隔热手套', '烤盘', '保鲜膜'],
+    steps: [
+      { title: '混合材料', desc: '将面粉、糖、盐、酵母加入碗中混合，中间挖坑，倒入温水，用筷子搅拌至无干粉。', icon: '🥣' },
+      { title: '揉面出膜', desc: '转至台面，加入软化黄油，反复折叠推揉约15分钟，直到面团光滑、可拉出薄膜。', icon: '👐' },
+      { title: '一次发酵', desc: '面团滚圆放入碗中，盖保鲜膜，置于温暖处（28-30℃）发酵约60分钟，至体积翻倍。', icon: '⏳' },
+      { title: '分割整形', desc: '取出面团轻拍排气，分成等份，各自滚圆后松弛10分钟，再整形成所需造型。', icon: '🔮' },
+      { title: '二次发酵', desc: '整形好的面团放烤盘，盖湿布，再发酵30-40分钟至1.5倍大，表面刷蛋液。', icon: '🌡️' },
+      { title: '烘烤完成', desc: '预热烤箱至180℃，放入中层烤18-22分钟，至表面金黄后取出，冷却后即可品尝。', icon: '🍞' },
+    ],
+    safety: '使用烤箱须有大人陪同；取放烤盘必须佩戴隔热手套；面包出炉后烤盘极烫，放在隔热垫上冷却，不要用手直接触碰。',
+    type: '日常生活劳动',
+  },
+];
+
+const ACHIEVEMENTS = [
+  { id: 1, user: '小明', class: '六年级3班', avatar: '🧑', course: '行李箱整理', title: '帮妈妈整理了春游行李箱！', desc: '用卷叠法把全家的衣服都整理好了，箱子空间多了好多，妈妈夸我整理得比她还好！', hasImg: true, imgEmoji: '🧳', stars: 5, likes: 18, group: 'tidy' },
+  { id: 2, user: '小雨', class: '六年级1班', avatar: '👧', course: '水仙花雕刻及养护', title: '我的水仙花开啦🌸', desc: '雕刻完养了两周，今天终于开花了！白色花瓣配着黄色花心，香香的，摆在书桌上超好看！', hasImg: true, imgEmoji: '🌸', stars: 5, likes: 34, group: 'farm' },
+  { id: 3, user: '小强', class: '六年级2班', avatar: '👦', course: '中国结的编织', title: '编了一个红色平结手链', desc: '第一次编中国结，刚开始总是绕错方向，后来慢慢摸清规律了，最后编出来送给了奶奶，她说很好看！', hasImg: false, stars: 4, likes: 22, group: 'craft' },
+  { id: 4, user: '小美', class: '六年级4班', avatar: '👱‍♀️', course: '布艺小包的设计与制作', title: '做了一个粉色零钱包💜', desc: '自己设计了一个圆形零钱包，用了粉色棉布，还绣了一个小星星，安上拉链后装硬币超方便！', hasImg: true, imgEmoji: '👜', stars: 5, likes: 41, group: 'craft' },
+  { id: 5, user: '小杰', class: '六年级5班', avatar: '🧒', course: '面包的烘焙', title: '烤出来的面包超香！', desc: '揉面揉了好久，手臂都有点酸了，但是烤出来的面包金黄金黄的，咬一口特别松软，全家都说好吃！', hasImg: true, imgEmoji: '🍞', stars: 5, likes: 47, group: 'cook' },
+  { id: 6, user: '小琳', class: '六年级3班', avatar: '👩', course: '金属丝花瓶架的设计与制作', title: '给小玻璃瓶做了一个支架', desc: '用铝丝弯出了一个三脚架，把家里的小玻璃瓶放进去，再插上一支干花，摆在窗台上很有设计感！', hasImg: false, stars: 4, likes: 15, group: 'industry' },
+  { id: 7, user: '小浩', class: '六年级2班', avatar: '🧑', course: '布艺挂件的设计与制作', title: '做了一只棉花糖小兔子🐰', desc: '设计了一个兔子造型挂件，耳朵用了粉色布，眼睛用黑色扣子，填了很多棉花，软软的！', hasImg: true, imgEmoji: '🎀', stars: 5, likes: 29, group: 'craft' },
+  { id: 8, user: '小涵', class: '六年级1班', avatar: '👧', course: '电烤箱的使用与维护', title: '学会了烤箱的正确用法', desc: '认真学习了烤箱各部件，还把烤盘和烤网清洗得干干净净，老师说我操作规范，很安全！', hasImg: false, stars: 4, likes: 11, group: 'appliance' },
+];
+
+const TIMELINE_DATA = [
+  { date: '2026年3月20日', emoji: '🍞', course: '面包的烘焙', title: '第一次成功烤出软面包！', desc: '揉面揉了快20分钟，烤出来的面包金黄松软，全家都夸好吃。', stars: 5, likes: 14 },
+  { date: '2026年3月05日', emoji: '🔩', course: '金属丝花瓶架的设计与制作', title: '做了一个三脚花瓶架', desc: '用铝丝弯出三脚架，放上小玻璃瓶插干花，摆在窗台很好看。', stars: 4, likes: 8 },
+  { date: '2026年2月15日', emoji: '🌸', course: '水仙花雕刻及养护', title: '水仙花雕刻完成，开始水养', desc: '第一次用雕刻刀，刚开始有点紧张，后来越来越顺手！', stars: 5, likes: 19 },
+];
+
+// ===== STATE =====
+let currentGrade = 6;
+let activeGroupFilter = 'all';
+let activeSemester = 0; // 0=全部, 1=上半学期, 2=下半学期
+let submitStep = 1;
+const starValues = { 1: 0, 2: 0, 3: 0 };
+const starDescs = ['', '继续加油！', '还不错哦~', '做得挺好！', '非常棒！', '超级棒！👏'];
+const likedSet = new Set();
+
+// ===== NAVIGATION =====
+function goPage(id) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+  window.scrollTo(0, 0);
+  if (id === 'home') renderHome();
+  if (id === 'courses') renderCourses();
+  if (id === 'wall') renderWall();
+  if (id === 'profile') renderProfile();
+  if (id === 'submit') resetSubmit();
+}
+
+function setActiveNav(el) {
+  document.querySelectorAll('.nav-link').forEach(l => l.classList.remove('active'));
+  if (el) el.classList.add('active');
+}
+
+// ===== GRADE =====
+function setGrade(el, grade) {
+  document.querySelectorAll('.grade-tab').forEach(t => t.classList.remove('active'));
+  el.classList.add('active');
+  currentGrade = grade;
+  renderHome();
+}
+
+// ===== HOME =====
+function renderHome() {
+  const filtered = COURSES.filter(c => c.grade === currentGrade);
+  const el = document.getElementById('home-courses');
+  if (filtered.length === 0) {
+    el.innerHTML = `<div style="grid-column:1/-1;text-align:center;padding:40px;color:var(--text-muted)">
+      <div style="font-size:48px;margin-bottom:12px">🚧</div>
+      <div style="font-size:15px">七年级课程内容即将上线，敬请期待！</div>
+    </div>`;
+  } else {
+    el.innerHTML = filtered.map(c => courseCard(c)).join('');
+  }
+
+  const achEl = document.getElementById('home-achievements');
+  achEl.innerHTML = ACHIEVEMENTS.slice(0, 4).map(a => `
+    <div class="ach-preview-card" onclick="goPage('wall'); setActiveNav(document.querySelectorAll('.nav-link')[2])">
+      <div class="ach-avatar" style="background:var(--green-pale)">${a.avatar}</div>
+      <div style="font-size:11px;color:var(--text-muted);margin-bottom:4px">${a.user} · ${a.class}</div>
+      <h4>${a.title}</h4>
+      <p>${a.desc.substring(0, 40)}\u2026</p>
+      <div class="ach-likes">\u2764\uFE0F ${a.likes} 个赞</div>
+    </div>
+  `).join('');
+}
+
+const COURSE_COVERS = {
+
+  1: `<svg viewBox="0 0 680 480" xmlns="http://www.w3.org/2000/svg" style="width:100%;height:100%;display:block">
+  <rect width="680" height="480" fill="#EAF4FF"/>
+  <g opacity="0.07" fill="none" stroke="#1565C0" stroke-width="1">
+    <line x1="0" y1="60" x2="680" y2="60"/><line x1="0" y1="120" x2="680" y2="120"/><line x1="0" y1="180" x2="680" y2="180"/><line x1="0" y1="240" x2="680" y2="240"/><line x1="0" y1="300" x2="680" y2="300"/><line x1="0" y1="360" x2="680" y2="360"/><line x1="0" y1="420" x2="680" y2="420"/>
+  </g>
+  <rect x="170" y="60" width="340" height="280" rx="18" fill="#1565C0"/>
+  <rect x="178" y="68" width="324" height="264" rx="14" fill="#1976D2"/>
+  <rect x="186" y="76" width="308" height="248" rx="10" fill="#E3F2FD"/>
+  <rect x="200" y="88" width="280" height="20" rx="4" fill="#BBDEFB"/>
+  <rect x="200" y="116" width="240" height="14" rx="3" fill="#BBDEFB"/>
+  <rect x="200" y="136" width="260" height="14" rx="3" fill="#BBDEFB"/>
+  <rect x="200" y="156" width="230" height="14" rx="3" fill="#BBDEFB"/>
+  <rect x="200" y="184" width="280" height="14" rx="3" fill="#BBDEFB"/>
+  <rect x="200" y="204" width="250" height="14" rx="3" fill="#BBDEFB"/>
+  <rect x="200" y="224" width="265" height="14" rx="3" fill="#BBDEFB"/>
+  <rect x="200" y="252" width="120" height="14" rx="3" fill="#90CAF9"/>
+  <rect x="200" y="272" width="280" height="14" rx="3" fill="#BBDEFB"/>
+  <rect x="200" y="292" width="200" height="14" rx="3" fill="#BBDEFB"/>
+  <rect x="490" y="60" width="20" height="280" rx="5" fill="#0D47A1" opacity="0.5"/>
+  <rect x="170" y="330" width="340" height="10" rx="3" fill="#0D47A1" opacity="0.3"/>
+  <rect x="175" y="335" width="330" height="8" rx="3" fill="#1565C0" opacity="0.4"/>
+  <rect x="200" y="355" width="120" height="60" rx="8" fill="#FFF9C4" stroke="#F9A825" stroke-width="1.5"/>
+  <rect x="340" y="355" width="100" height="60" rx="8" fill="#E8F5E9" stroke="#388E3C" stroke-width="1.5"/>
+  <rect x="455" y="355" width="70" height="60" rx="8" fill="#FCE4EC" stroke="#C2185B" stroke-width="1.5"/>
+  <rect x="200" y="425" width="325" height="30" rx="6" fill="#1565C0" opacity="0.12"/>
+  <line x1="340" y1="340" x2="340" y2="60" stroke="#0D47A1" stroke-width="1.5" stroke-dasharray="4,3" opacity="0.3"/>
+</svg>`,
+
+  2: `<svg viewBox="0 0 680 480" xmlns="http://www.w3.org/2000/svg" style="width:100%;height:100%;display:block">
+  <rect width="680" height="480" fill="#FCE4EC"/>
+  <circle cx="340" cy="220" r="180" fill="#F8BBD0" opacity="0.4"/>
+  <circle cx="340" cy="220" r="130" fill="#F48FB1" opacity="0.25"/>
+  <g transform="translate(340,220)">
+    <polygon points="0,-110 26,-36 104,-36 42,14 68,88 0,44 -68,88 -42,14 -104,-36 -26,-36" fill="#E91E63" opacity="0.15"/>
+    <polygon points="0,-85 20,-28 80,-28 32,11 52,68 0,34 -52,68 -32,11 -80,-28 -20,-28" fill="#E91E63" opacity="0.2"/>
+    <polygon points="0,-60 14,-20 56,-20 23,8 37,48 0,24 -37,48 -23,8 -56,-20 -14,-20" fill="#C2185B"/>
+    <polygon points="0,-40 10,-13 37,-13 15,5 24,32 0,16 -24,32 -15,5 -37,-13 -10,-13" fill="#E91E63"/>
+    <circle cx="0" cy="0" r="18" fill="#F06292"/>
+    <circle cx="0" cy="0" r="10" fill="#FCE4EC"/>
+    <line x1="0" y1="-60" x2="0" y2="-130" stroke="#C2185B" stroke-width="3" stroke-linecap="round"/>
+    <circle cx="0" cy="-130" rx="10" ry="7" fill="#AD1457"/>
+    <ellipse cx="0" cy="-130" rx="10" ry="7" fill="#AD1457"/>
+    <path d="M0,-137 Q-12,-152 -8,-164 Q0,-170 8,-164 Q12,-152 0,-137Z" fill="#E91E63"/>
+    <path d="M0,-137 Q-8,-148 -4,-158 Q0,-163 4,-158 Q8,-148 0,-137Z" fill="#F8BBD0"/>
+    <line x1="-40" y1="60" x2="-55" y2="110" stroke="#C2185B" stroke-width="3" stroke-linecap="round"/>
+    <line x1="40" y1="60" x2="55" y2="110" stroke="#C2185B" stroke-width="3" stroke-linecap="round"/>
+    <ellipse cx="-55" cy="116" rx="9" ry="6" fill="#AD1457"/>
+    <ellipse cx="55" cy="116" rx="9" ry="6" fill="#AD1457"/>
+    <line x1="-55" y1="121" x2="-62" y2="148" stroke="#E91E63" stroke-width="1.8" stroke-linecap="round"/>
+    <line x1="-55" y1="121" x2="-55" y2="150" stroke="#E91E63" stroke-width="1.8" stroke-linecap="round"/>
+    <line x1="-55" y1="121" x2="-48" y2="148" stroke="#E91E63" stroke-width="1.8" stroke-linecap="round"/>
+    <line x1="55" y1="121" x2="48" y2="148" stroke="#E91E63" stroke-width="1.8" stroke-linecap="round"/>
+    <line x1="55" y1="121" x2="55" y2="150" stroke="#E91E63" stroke-width="1.8" stroke-linecap="round"/>
+    <line x1="55" y1="121" x2="62" y2="148" stroke="#E91E63" stroke-width="1.8" stroke-linecap="round"/>
+    <path d="M-20,60 Q-60,50 -80,20" fill="none" stroke="#F48FB1" stroke-width="2.5" stroke-linecap="round"/>
+    <path d="M20,60 Q60,50 80,20" fill="none" stroke="#F48FB1" stroke-width="2.5" stroke-linecap="round"/>
+  </g>
+  <g opacity="0.12" stroke="#C2185B" stroke-width="0.8" fill="none">
+    <circle cx="340" cy="220" r="165"/><circle cx="340" cy="220" r="145"/>
+  </g>
+</svg>`,
+
+  3: `<svg viewBox="0 0 680 480" xmlns="http://www.w3.org/2000/svg" style="width:100%;height:100%;display:block">
+  <rect width="680" height="480" fill="#F3E5F5"/>
+  <g opacity="0.1" stroke="#7B1FA2" stroke-width="0.8" fill="none">
+    <line x1="0" y1="0" x2="680" y2="480"/><line x1="80" y1="0" x2="680" y2="375"/><line x1="160" y1="0" x2="680" y2="270"/><line x1="240" y1="0" x2="680" y2="165"/><line x1="320" y1="0" x2="680" y2="60"/><line x1="0" y1="105" x2="575" y2="480"/><line x1="0" y1="210" x2="470" y2="480"/><line x1="0" y1="315" x2="365" y2="480"/>
+  </g>
+  <ellipse cx="340" cy="230" rx="145" ry="165" fill="#CE93D8" opacity="0.35"/>
+  <ellipse cx="340" cy="230" rx="125" ry="145" fill="#BA68C8" opacity="0.4"/>
+  <ellipse cx="340" cy="230" rx="105" ry="125" fill="#AB47BC"/>
+  <ellipse cx="340" cy="230" rx="85" ry="105" fill="#9C27B0"/>
+  <line x1="340" y1="85" x2="340" y2="115" stroke="#6A1B9A" stroke-width="3" stroke-linecap="round"/>
+  <line x1="340" y1="345" x2="340" y2="375" stroke="#6A1B9A" stroke-width="3" stroke-linecap="round"/>
+  <rect x="290" y="60" width="100" height="30" rx="8" fill="#7B1FA2"/>
+  <rect x="295" y="65" width="90" height="20" rx="5" fill="#AB47BC"/>
+  <rect x="320" y="370" width="40" height="50" rx="6" fill="#6A1B9A"/>
+  <path d="M306,375 Q320,390 340,395 Q360,390 374,375" fill="none" stroke="#AB47BC" stroke-width="2.5"/>
+  <ellipse cx="340" cy="230" rx="50" ry="60" fill="#7B1FA2"/>
+  <path d="M250,200 Q270,185 290,195" fill="none" stroke="#E1BEE7" stroke-width="2.5" stroke-linecap="round"/>
+  <path d="M250,240 Q270,255 290,245" fill="none" stroke="#E1BEE7" stroke-width="2.5" stroke-linecap="round"/>
+  <path d="M390,195 Q410,185 430,200" fill="none" stroke="#E1BEE7" stroke-width="2.5" stroke-linecap="round"/>
+  <path d="M390,245 Q410,255 430,240" fill="none" stroke="#E1BEE7" stroke-width="2.5" stroke-linecap="round"/>
+  <ellipse cx="340" cy="230" rx="20" ry="24" fill="#CE93D8"/>
+  <circle cx="340" cy="230" r="10" fill="#F3E5F5"/>
+  <line x1="290" y1="75" x2="295" y2="68" stroke="#7B1FA2" stroke-width="2"/>
+  <line x1="385" y1="75" x2="390" y2="68" stroke="#7B1FA2" stroke-width="2"/>
+</svg>`,
+
+  4: `<svg viewBox="0 0 680 480" xmlns="http://www.w3.org/2000/svg" style="width:100%;height:100%;display:block">
+  <rect width="680" height="480" fill="#E8F5E9"/>
+  <ellipse cx="340" cy="400" rx="180" ry="28" fill="#A5D6A7" opacity="0.6"/>
+  <ellipse cx="340" cy="415" rx="155" ry="18" fill="#81C784" opacity="0.5"/>
+  <rect x="210" y="390" width="260" height="50" rx="12" fill="#4CAF50" opacity="0.8"/>
+  <rect x="220" y="398" width="240" height="34" rx="8" fill="#81C784"/>
+  <ellipse cx="340" cy="398" rx="100" ry="14" fill="#A5D6A7" opacity="0.6"/>
+  <ellipse cx="280" cy="370" rx="18" ry="30" fill="#2E7D32" opacity="0.9" transform="rotate(-15,280,370)"/>
+  <ellipse cx="400" cy="365" rx="16" ry="28" fill="#388E3C" opacity="0.9" transform="rotate(12,400,365)"/>
+  <ellipse cx="340" cy="355" rx="20" ry="35" fill="#2E7D32"/>
+  <ellipse cx="310" cy="320" rx="15" ry="28" fill="#388E3C" opacity="0.8" transform="rotate(-8,310,320)"/>
+  <ellipse cx="370" cy="318" rx="14" ry="26" fill="#2E7D32" opacity="0.85" transform="rotate(10,370,318)"/>
+  <g transform="translate(340,200)">
+    <ellipse cx="0" cy="0" rx="55" ry="70" fill="#FFFDE7" stroke="#F9A825" stroke-width="1.5"/>
+    <ellipse cx="-20" cy="-15" rx="30" ry="38" fill="#FFFDE7" stroke="#F9A825" stroke-width="1"/>
+    <ellipse cx="20" cy="-15" rx="28" ry="36" fill="#FFFDE7" stroke="#FBC02D" stroke-width="1"/>
+    <ellipse cx="0" cy="0" rx="42" ry="55" fill="none" stroke="#FBC02D" stroke-width="0.8" opacity="0.4"/>
+    <g transform="translate(0,-72)">
+      <path d="M0,0 Q-22,-28 -18,-55 Q-8,-70 0,-65 Q8,-70 18,-55 Q22,-28 0,0Z" fill="#FFFDE7" stroke="#FBC02D" stroke-width="1.5"/>
+      <path d="M0,-5 Q-14,-25 -10,-48 Q0,-58 10,-48 Q14,-25 0,-5Z" fill="#FFF9C4"/>
+      <circle cx="-8" cy="-35" r="5" fill="#FFD600"/>
+      <circle cx="8" cy="-35" r="5" fill="#FFD600"/>
+      <circle cx="0" cy="-48" r="5" fill="#FFD600"/>
+    </g>
+    <g transform="translate(-52,10)">
+      <path d="M0,0 Q-24,-20 -22,-45 Q-12,-58 0,-52 Q6,-30 0,0Z" fill="#FFFDE7" stroke="#FBC02D" stroke-width="1.5"/>
+      <circle cx="-12" cy="-32" r="5" fill="#FFD600"/>
+      <circle cx="-18" cy="-44" r="4" fill="#FFD600"/>
+    </g>
+    <g transform="translate(52,10)">
+      <path d="M0,0 Q24,-20 22,-45 Q12,-58 0,-52 Q-6,-30 0,0Z" fill="#FFFDE7" stroke="#FBC02D" stroke-width="1.5"/>
+      <circle cx="12" cy="-32" r="5" fill="#FFD600"/>
+      <circle cx="18" cy="-44" r="4" fill="#FFD600"/>
+    </g>
+  </g>
+  <ellipse cx="340" cy="415" rx="80" ry="8" fill="#388E3C" opacity="0.2"/>
+</svg>`,
+
+  5: `<svg viewBox="0 0 680 480" xmlns="http://www.w3.org/2000/svg" style="width:100%;height:100%;display:block">
+  <rect width="680" height="480" fill="#FFF8E1"/>
+  <g opacity="0.06" stroke="#C62828" stroke-width="0.8" fill="none">
+    <line x1="40" y1="0" x2="0" y2="40"/><line x1="120" y1="0" x2="0" y2="120"/><line x1="200" y1="0" x2="0" y2="200"/><line x1="280" y1="0" x2="0" y2="280"/><line x1="360" y1="0" x2="0" y2="360"/><line x1="440" y1="0" x2="0" y2="440"/><line x1="520" y1="0" x2="40" y2="480"/><line x1="600" y1="0" x2="120" y2="480"/><line x1="680" y1="0" x2="200" y2="480"/><line x1="680" y1="80" x2="280" y2="480"/><line x1="680" y1="160" x2="360" y2="480"/><line x1="680" y1="240" x2="440" y2="480"/>
+  </g>
+  <g transform="translate(340,220)">
+    <path d="M-16,-95 C-30,-130 -60,-130 -60,-95 C-60,-65 -30,-60 -16,-75 Z" fill="#C62828" opacity="0.9"/>
+    <path d="M16,-95 C30,-130 60,-130 60,-95 C60,-65 30,-60 16,-75 Z" fill="#D32F2F" opacity="0.85"/>
+    <path d="M-16,95 C-30,130 -60,130 -60,95 C-60,65 -30,60 -16,75 Z" fill="#C62828" opacity="0.9"/>
+    <path d="M16,95 C30,130 60,130 60,95 C60,65 30,60 16,75 Z" fill="#D32F2F" opacity="0.85"/>
+    <path d="M-95,-16 C-130,-30 -130,-60 -95,-60 C-65,-60 -60,-30 -75,-16 Z" fill="#B71C1C" opacity="0.9"/>
+    <path d="M-95,16 C-130,30 -130,60 -95,60 C-65,60 -60,30 -75,16 Z" fill="#C62828" opacity="0.85"/>
+    <path d="M95,-16 C130,-30 130,-60 95,-60 C65,-60 60,-30 75,-16 Z" fill="#B71C1C" opacity="0.9"/>
+    <path d="M95,16 C130,30 130,60 95,60 C65,60 60,30 75,16 Z" fill="#C62828" opacity="0.85"/>
+    <path d="M-55,-55 C-85,-90 -110,-80 -100,-55 C-90,-30 -65,-30 -50,-45 Z" fill="#E53935" opacity="0.75"/>
+    <path d="M55,-55 C85,-90 110,-80 100,-55 C90,-30 65,-30 50,-45 Z" fill="#E53935" opacity="0.75"/>
+    <path d="M-55,55 C-85,90 -110,80 -100,55 C-90,30 -65,30 -50,45 Z" fill="#E53935" opacity="0.75"/>
+    <path d="M55,55 C85,90 110,80 100,55 C90,30 65,30 50,45 Z" fill="#E53935" opacity="0.75"/>
+    <path d="M-72,-20 C-50,-20 -30,-35 0,-35 C30,-35 50,-20 72,-20" fill="none" stroke="#8B0000" stroke-width="7" stroke-linecap="round" opacity="0.7"/>
+    <path d="M-72,0 C-50,0 -30,-12 0,-12 C30,-12 50,0 72,0" fill="none" stroke="#C62828" stroke-width="8" stroke-linecap="round"/>
+    <path d="M-72,20 C-50,20 -30,35 0,35 C30,35 50,20 72,20" fill="none" stroke="#8B0000" stroke-width="7" stroke-linecap="round" opacity="0.7"/>
+    <path d="M-20,-72 C-20,-50 -35,-30 -35,0 C-35,30 -20,50 -20,72" fill="none" stroke="#8B0000" stroke-width="7" stroke-linecap="round" opacity="0.7"/>
+    <path d="M0,-72 C0,-50 -12,-30 -12,0 C-12,30 0,50 0,72" fill="none" stroke="#C62828" stroke-width="8" stroke-linecap="round"/>
+    <path d="M20,-72 C20,-50 35,-30 35,0 C35,30 20,50 20,72" fill="none" stroke="#8B0000" stroke-width="7" stroke-linecap="round" opacity="0.7"/>
+    <polygon points="0,-50 50,0 0,50 -50,0" fill="#E53935" stroke="#8B0000" stroke-width="1.5"/>
+    <polygon points="0,-30 30,0 0,30 -30,0" fill="#EF5350"/>
+    <circle cx="0" cy="0" r="14" fill="#FFD700" stroke="#F57F17" stroke-width="2"/>
+    <circle cx="0" cy="0" r="8" fill="#FFECB3"/>
+    <circle cx="-3" cy="-3" r="3" fill="white" opacity="0.6"/>
+    <circle cx="0" cy="0" r="52" fill="none" stroke="#FFD700" stroke-width="1.5" stroke-dasharray="4,3" opacity="0.6"/>
+    <line x1="0" y1="-95" x2="0" y2="-165" stroke="#C62828" stroke-width="5" stroke-linecap="round"/>
+    <line x1="-20" y1="95" x2="-20" y2="155" stroke="#C62828" stroke-width="4" stroke-linecap="round"/>
+    <line x1="20" y1="95" x2="20" y2="155" stroke="#C62828" stroke-width="4" stroke-linecap="round"/>
+    <ellipse cx="-20" cy="155" rx="8" ry="5" fill="#B71C1C"/>
+    <ellipse cx="20" cy="155" rx="8" ry="5" fill="#B71C1C"/>
+    <line x1="-22" y1="159" x2="-24" y2="198" stroke="#C62828" stroke-width="1.5" stroke-linecap="round" opacity="0.9"/>
+    <line x1="-20" y1="160" x2="-20" y2="200" stroke="#D32F2F" stroke-width="2" stroke-linecap="round"/>
+    <line x1="-18" y1="159" x2="-16" y2="198" stroke="#C62828" stroke-width="1.5" stroke-linecap="round" opacity="0.9"/>
+    <line x1="18" y1="159" x2="16" y2="198" stroke="#C62828" stroke-width="1.5" stroke-linecap="round" opacity="0.9"/>
+    <line x1="20" y1="160" x2="20" y2="200" stroke="#D32F2F" stroke-width="2" stroke-linecap="round"/>
+    <line x1="22" y1="159" x2="24" y2="198" stroke="#C62828" stroke-width="1.5" stroke-linecap="round" opacity="0.9"/>
+  </g>
+  <ellipse cx="340" cy="48" rx="14" ry="9" fill="none" stroke="#FFD700" stroke-width="3"/>
+  <line x1="340" y1="57" x2="340" y2="75" stroke="#C62828" stroke-width="5" stroke-linecap="round"/>
+  <text x="340" y="462" text-anchor="middle" font-family="serif" font-size="32" fill="#C62828" opacity="0.12" font-weight="bold">中国结</text>
+</svg>`,
+
+  6: `<svg viewBox="0 0 680 480" xmlns="http://www.w3.org/2000/svg" style="width:100%;height:100%;display:block">
+  <rect width="680" height="480" fill="#F5F5F5"/>
+  <g opacity="0.08" stroke="#455A64" stroke-width="1" fill="none">
+    <line x1="0" y1="0" x2="680" y2="480"/><line x1="0" y1="96" x2="584" y2="480"/><line x1="0" y1="192" x2="488" y2="480"/><line x1="0" y1="288" x2="392" y2="480"/><line x1="0" y1="384" x2="296" y2="480"/><line x1="96" y1="0" x2="680" y2="384"/><line x1="192" y1="0" x2="680" y2="288"/><line x1="288" y1="0" x2="680" y2="192"/><line x1="384" y1="0" x2="680" y2="96"/>
+  </g>
+  <ellipse cx="340" cy="330" rx="60" ry="80" fill="#B0BEC5" opacity="0.4"/>
+  <ellipse cx="340" cy="330" rx="50" ry="70" fill="#90A4AE" opacity="0.5"/>
+  <ellipse cx="340" cy="330" rx="42" ry="62" fill="#ECEFF1" stroke="#90A4AE" stroke-width="1.5"/>
+  <ellipse cx="340" cy="300" rx="36" ry="30" fill="#CFD8DC" opacity="0.6"/>
+  <ellipse cx="340" cy="340" rx="28" ry="22" fill="#B0BEC5" opacity="0.3"/>
+  <line x1="260" y1="100" x2="340" y2="270" stroke="#607D8B" stroke-width="3.5" stroke-linecap="round"/>
+  <line x1="340" y1="100" x2="340" y2="270" stroke="#546E7A" stroke-width="3.5" stroke-linecap="round"/>
+  <line x1="420" y1="100" x2="340" y2="270" stroke="#607D8B" stroke-width="3.5" stroke-linecap="round"/>
+  <path d="M260,100 Q240,80 235,60 Q238,45 250,50 Q258,65 260,100Z" fill="#78909C"/>
+  <path d="M340,100 Q340,75 340,55 Q345,42 352,48 Q355,62 340,100Z" fill="#607D8B"/>
+  <path d="M420,100 Q440,80 445,60 Q442,45 430,50 Q422,65 420,100Z" fill="#78909C"/>
+  <path d="M255,95 Q295,88 340,92 Q385,88 425,95 Q410,108 340,104 Q270,108 255,95Z" fill="#546E7A" opacity="0.6"/>
+  <path d="M258,100 Q300,115 340,110 Q380,115 422,100" fill="none" stroke="#455A64" stroke-width="2" opacity="0.4"/>
+  <ellipse cx="340" cy="270" rx="22" ry="12" fill="#455A64" opacity="0.5"/>
+  <ellipse cx="335" cy="260" rx="10" ry="16" fill="#CFD8DC" opacity="0.5"/>
+  <path d="M160,410 Q230,395 280,375 Q310,368 340,370 Q370,368 400,375 Q450,395 520,410" fill="none" stroke="#90A4AE" stroke-width="2" opacity="0.5"/>
+  <ellipse cx="340" cy="380" rx="38" ry="8" fill="#90A4AE" opacity="0.4"/>
+  <line x1="340" y1="370" x2="340" y2="400" stroke="#546E7A" stroke-width="2" stroke-dasharray="3,2" opacity="0.5"/>
+  <circle cx="260" cy="100" r="6" fill="#B0BEC5" stroke="#546E7A" stroke-width="1.5"/>
+  <circle cx="340" cy="100" r="6" fill="#B0BEC5" stroke="#546E7A" stroke-width="1.5"/>
+  <circle cx="420" cy="100" r="6" fill="#B0BEC5" stroke="#546E7A" stroke-width="1.5"/>
+  <path d="M300,380 Q320,420 340,430 Q360,420 380,380" fill="#A5D6A7" opacity="0.7"/>
+  <path d="M318,385 Q330,415 340,422 Q350,415 362,385" fill="#81C784" opacity="0.8"/>
+  <circle cx="340" cy="382" r="4" fill="#4CAF50" opacity="0.7"/>
+</svg>`,
+
+  7: `<svg viewBox="0 0 680 480" xmlns="http://www.w3.org/2000/svg" style="width:100%;height:100%;display:block">
+  <rect width="680" height="480" fill="#FFF3E0"/>
+  <rect x="140" y="100" width="400" height="300" rx="20" fill="#BF360C"/>
+  <rect x="148" y="108" width="384" height="284" rx="16" fill="#D84315"/>
+  <rect x="160" y="120" width="360" height="260" rx="12" fill="#FFCCBC"/>
+  <rect x="168" y="128" width="344" height="244" rx="8" fill="#1A1A1A"/>
+  <rect x="180" y="140" width="320" height="220" rx="6" fill="#212121"/>
+  <rect x="185" y="145" width="310" height="210" rx="4" fill="#111111"/>
+  <rect x="192" y="152" width="296" height="196" rx="3" fill="#0D0D0D"/>
+  <line x1="192" y1="200" x2="488" y2="200" stroke="#E64A19" stroke-width="4" stroke-linecap="round" opacity="0.9"/>
+  <line x1="192" y1="220" x2="488" y2="220" stroke="#BF360C" stroke-width="3" stroke-linecap="round" opacity="0.7"/>
+  <line x1="192" y1="258" x2="488" y2="258" stroke="#E64A19" stroke-width="4" stroke-linecap="round" opacity="0.9"/>
+  <line x1="192" y1="278" x2="488" y2="278" stroke="#BF360C" stroke-width="3" stroke-linecap="round" opacity="0.7"/>
+  <rect x="215" y="300" width="250" height="30" rx="5" fill="#1A1A1A"/>
+  <rect x="224" y="308" width="100" height="14" rx="3" fill="#E64A19" opacity="0.8"/>
+  <rect x="335" y="308" width="120" height="14" rx="3" fill="#333"/>
+  <rect x="220" y="330" width="80" height="16" rx="4" fill="#FF5722" opacity="0.9"/>
+  <rect x="310" y="330" width="60" height="16" rx="4" fill="#333"/>
+  <rect x="380" y="330" width="60" height="16" rx="4" fill="#333"/>
+  <rect x="155" y="383" width="370" height="12" rx="4" fill="#BF360C" opacity="0.6"/>
+  <rect x="148" y="390" width="384" height="8" rx="3" fill="#8D1C02" opacity="0.4"/>
+  <rect x="240" y="60" width="60" height="45" rx="6" fill="#8D1C02"/>
+  <rect x="248" y="68" width="44" height="29" rx="4" fill="#D84315"/>
+  <rect x="380" y="60" width="60" height="45" rx="6" fill="#8D1C02"/>
+  <rect x="388" y="68" width="44" height="29" rx="4" fill="#D84315"/>
+  <rect x="130" y="230" width="18" height="60" rx="4" fill="#BF360C"/>
+  <rect x="532" y="230" width="18" height="60" rx="4" fill="#BF360C"/>
+  <path d="M296,156 Q310,148 324,156" fill="none" stroke="#FF8A65" stroke-width="1.5" opacity="0.6"/>
+  <path d="M356,156 Q370,148 384,156" fill="none" stroke="#FF8A65" stroke-width="1.5" opacity="0.6"/>
+  <path d="M416,156 Q430,148 444,156" fill="none" stroke="#FF8A65" stroke-width="1.5" opacity="0.6"/>
+</svg>`,
+
+  8: `<svg viewBox="0 0 680 480" xmlns="http://www.w3.org/2000/svg" style="width:100%;height:100%;display:block">
+  <rect width="680" height="480" fill="#FFF8E1"/>
+  <g opacity="0.08" fill="none" stroke="#F57F17" stroke-width="1">
+    <circle cx="340" cy="240" r="180"/><circle cx="340" cy="240" r="155"/><circle cx="340" cy="240" r="130"/>
+  </g>
+  <ellipse cx="340" cy="300" rx="175" ry="110" fill="#FFECB3" opacity="0.6"/>
+  <path d="M165,300 Q165,210 200,175 Q240,140 340,135 Q440,140 480,175 Q515,210 515,300 Q515,370 480,395 Q440,415 340,415 Q240,415 200,395 Q165,370 165,300Z" fill="#FFCC02"/>
+  <path d="M175,300 Q175,218 208,185 Q246,150 340,145 Q434,150 472,185 Q505,218 505,300 Q505,365 472,388 Q434,408 340,408 Q246,408 208,388 Q175,365 175,300Z" fill="#FFB300"/>
+  <path d="M185,295 Q185,225 215,195 Q250,162 340,158 Q430,162 465,195 Q495,225 495,295 Q495,358 465,380 Q430,398 340,398 Q250,398 215,380 Q185,358 185,295Z" fill="#FFC107"/>
+  <path d="M200,285 Q200,230 228,204 Q260,175 340,172 Q420,175 452,204 Q480,230 480,285 Q480,340 452,360 Q420,378 340,378 Q260,378 228,360 Q200,340 200,285Z" fill="#FFD54F"/>
+  <path d="M215,275 Q215,235 240,215 Q268,192 340,190 Q412,192 440,215 Q465,235 465,275 Q465,318 440,336 Q412,352 340,352 Q268,352 240,336 Q215,318 215,275Z" fill="#FFECB3"/>
+  <path d="M185,295 Q235,270 340,268 Q445,270 495,295" fill="none" stroke="#FFA000" stroke-width="3" stroke-linecap="round" opacity="0.7"/>
+  <path d="M188,320 Q240,300 340,298 Q440,300 492,320" fill="none" stroke="#FF8F00" stroke-width="2.5" stroke-linecap="round" opacity="0.6"/>
+  <path d="M195,345 Q248,328 340,326 Q432,328 485,345" fill="none" stroke="#FF8F00" stroke-width="2" stroke-linecap="round" opacity="0.5"/>
+  <path d="M340,172 Q340,140 340,115" fill="none" stroke="#E65100" stroke-width="3" stroke-linecap="round"/>
+  <path d="M315,190 Q300,160 290,130" fill="none" stroke="#E65100" stroke-width="2.5" stroke-linecap="round" opacity="0.8"/>
+  <path d="M365,190 Q380,160 390,130" fill="none" stroke="#E65100" stroke-width="2.5" stroke-linecap="round" opacity="0.8"/>
+  <path d="M295,115 Q320,105 340,115 Q360,105 385,115" fill="none" stroke="#BF360C" stroke-width="2" stroke-linecap="round" opacity="0.6"/>
+  <path d="M330,108 Q320,90 315,72 Q318,62 326,65 Q332,78 340,95 Q348,78 354,65 Q362,62 365,72 Q360,90 350,108" fill="#E65100" opacity="0.8"/>
+  <ellipse cx="340" cy="260" rx="85" ry="60" fill="#FFF9C4" opacity="0.5"/>
+  <ellipse cx="340" cy="260" rx="55" ry="40" fill="#FFFDE7" opacity="0.8"/>
+  <circle cx="340" cy="260" r="22" fill="white" opacity="0.7"/>
+  <ellipse cx="285" cy="220" rx="25" ry="18" fill="white" opacity="0.25"/>
+  <path d="M305,245 Q320,235 335,245" fill="none" stroke="#FFB300" stroke-width="2" opacity="0.5"/>
+</svg>`
+
+};
+
+function courseCard(c) {
+  const semLabel = c.semester === 1 ? '上半学期' : '下半学期';
+  const semColor = c.semester === 1 ? 'tag-green' : 'tag-orange';
+  const coverHtml = COURSE_COVERS[c.id]
+    ? `<div class="course-card-cover" style="background:${c.color};padding:0;overflow:hidden">${COURSE_COVERS[c.id]}</div>`
+    : `<div class="course-card-cover" style="background:${c.color}">${c.emoji}</div>`;
+  return `
+    <div class="course-card" onclick="openCourse(${c.id})">
+      ${coverHtml}
+      <div class="course-card-body">
+        <div class="course-card-meta">
+          <span class="tag ${semColor}">${semLabel}</span>
+          <span class="tag tag-yellow">${TASK_GROUPS.find(g => g.id === c.group)?.name || ''}</span>
+        </div>
+        <h3>${c.title}</h3>
+        <p>${c.desc.substring(0, 48)}\u2026</p>
+      </div>
+      <div class="course-card-footer">
+        <span style="font-size:12px;color:var(--text-muted)">${c.type}</span>
+        <span style="font-size:13px;color:var(--green);font-weight:700">查看 →</span>
+      </div>
+    </div>
+  `;
+}
+
+// ===== COURSES PAGE =====
+function renderCourses() {
+  // Sidebar
+  const sb = document.getElementById('sidebar-filters');
+  sb.innerHTML = `
+    <div class="sidebar-title" style="margin-top:0">学期</div>
+    ${[{id:0,name:'全部学期',icon:'📅'},{id:1,name:'上半学期',icon:'🌿'},{id:2,name:'下半学期',icon:'🍂'}].map(s => `
+      <div class="filter-item ${s.id === activeSemester ? 'active' : ''}" onclick="setSemFilter(${s.id}, this)">
+        <span class="filter-icon">${s.icon}</span> ${s.name}
+      </div>
+    `).join('')}
+    <div class="sidebar-title" style="margin-top:20px">任务群</div>
+    ${TASK_GROUPS.map(g => `
+      <div class="filter-item ${g.id === activeGroupFilter ? 'active' : ''}" onclick="setGroupFilter('${g.id}', this)">
+        <span class="filter-icon">${g.icon}</span> ${g.name}
+      </div>
+    `).join('')}
+  `;
+  filterCourses();
+}
+
+function setSemFilter(id, el) {
+  activeSemester = id;
+  document.querySelectorAll('.filter-item').forEach(i => i.classList.remove('active'));
+  el.classList.add('active');
+  // re-highlight group filter
+  const gItems = document.querySelectorAll('.filter-item');
+  gItems.forEach(i => { if(i.textContent.trim().includes(TASK_GROUPS.find(g=>g.id===activeGroupFilter)?.name)) i.classList.add('active'); });
+  filterCourses();
+}
+
+function setGroupFilter(id, el) {
+  activeGroupFilter = id;
+  document.querySelectorAll('.filter-item').forEach(i => i.classList.remove('active'));
+  el.classList.add('active');
+  filterCourses();
+}
+
+function filterCourses() {
+  const q = (document.getElementById('search-input')?.value || '').trim().toLowerCase();
+  let results = COURSES.filter(c => c.grade === 6); // 当前只有6年级数据
+  if (activeSemester !== 0) results = results.filter(c => c.semester === activeSemester);
+  if (activeGroupFilter !== 'all') results = results.filter(c => c.group === activeGroupFilter);
+  if (q) results = results.filter(c => c.title.includes(q) || c.desc.includes(q));
+  document.getElementById('courses-count').textContent = results.length;
+  document.getElementById('courses-grid').innerHTML = results.map(c => courseCard(c)).join('');
+}
+
+// ===== COURSE DETAIL =====
+function openCourse(id) {
+  const c = COURSES.find(x => x.id === id);
+  if (!c) return;
+  document.getElementById('detail-breadcrumb').textContent = c.title;
+  if (COURSE_COVERS[c.id]) {
+    const el = document.getElementById('detail-cover');
+    el.style.background = c.color;
+    el.style.padding = '0';
+    el.style.overflow = 'hidden';
+    el.innerHTML = COURSE_COVERS[c.id];
+  } else {
+    document.getElementById('detail-cover').style.background = c.color;
+    document.getElementById('detail-cover').style.padding = '';
+    document.getElementById('detail-cover').innerHTML = c.emoji;
+  }
+  document.getElementById('detail-title').textContent = c.title;
+  document.getElementById('detail-meta').innerHTML = `
+    <span class="tag ${c.semester === 1 ? 'tag-green' : 'tag-orange'}">${c.semester === 1 ? '上半学期' : '下半学期'}</span>
+    <span class="tag tag-yellow">${TASK_GROUPS.find(g => g.id === c.group)?.name}</span>
+    <span class="tag" style="background:#F0F0F0;color:#555">${c.type}</span>
+  `;
+  document.getElementById('detail-desc').textContent = c.desc;
+  document.getElementById('detail-objectives').innerHTML = `
+    <h4>🎯 学习目标</h4>
+    <ul>${c.objectives.map(o => `<li>${o}</li>`).join('')}</ul>
+  `;
+  document.getElementById('detail-materials').innerHTML = `
+    <h3>🧺 所需材料与工具</h3>
+    <div class="materials-grid">
+      ${c.materials.map((m, i) => `
+        <div class="material-item" id="mat-${id}-${i}" onclick="toggleMaterial(${id},${i})">
+          <div class="material-check" id="mcheck-${id}-${i}"></div> ${m}
+        </div>
+      `).join('')}
+    </div>
+  `;
+  document.getElementById('detail-steps').innerHTML = c.steps.map((s, i) => `
+    <div class="step-item">
+      <div class="step-num">${i+1}</div>
+      <div class="step-content">
+        <h4>${s.title}</h4>
+        <p>${s.desc}</p>
+      </div>
+      <div class="step-icon">${s.icon}</div>
+    </div>
+  `).join('');
+  document.getElementById('detail-safety').innerHTML = `
+    <div class="icon">⚠️</div>
+    <p>${c.safety.replace('⚠️ ','').replace('🌟 ','')}</p>
+  `;
+  const simEl = document.getElementById('course-simulator');
+  simEl.innerHTML = '';
+  if (c.id === 1) { simEl.innerHTML = buildLuggageSim(); setTimeout(initLuggageSim, 50); }
+  goPage('course-detail');
+}
+
+function buildLuggageSim() {
+  return `
+<div id="lsim" style="background:white;border-radius:20px;box-shadow:0 4px 20px rgba(44,36,22,0.12);padding:28px 28px 24px;user-select:none">
+  <div style="display:flex;align-items:center;gap:10px;margin-bottom:6px">
+    <h2 style="font-family:'Ma Shan Zheng',cursive;font-size:24px;color:#1A56A0;margin:0">互动模拟：行李箱整理</h2>
+    <span style="margin-left:auto;font-size:13px;font-weight:600;color:#52B788;background:#D8F3DC;padding:4px 12px;border-radius:100px">拖拽练习</span>
+  </div>
+  <p style="font-size:14px;color:#A08060;margin-bottom:22px">把下方的物品拖入行李箱的正确位置！</p>
+
+  <!-- 行李箱（上方大图） -->
+  <div style="display:flex;flex-direction:column;align-items:center;margin-bottom:24px">
+
+    <!-- 拉杆 -->
+    <div style="display:flex;justify-content:center;gap:52px;position:relative;z-index:3">
+      <div style="width:13px;height:52px;background:#C0C0C0;border-left:2px solid #E0E0E0;border-right:2px solid #909090;border-radius:4px 4px 0 0;box-shadow:inset 1px 0 2px rgba(255,255,255,0.5)"></div>
+      <div style="width:13px;height:52px;background:#C0C0C0;border-left:2px solid #E0E0E0;border-right:2px solid #909090;border-radius:4px 4px 0 0;box-shadow:inset 1px 0 2px rgba(255,255,255,0.5)"></div>
+    </div>
+    <!-- 把手 -->
+    <div style="display:flex;justify-content:center;z-index:3;margin-top:-2px">
+      <div style="width:96px;height:16px;background:linear-gradient(to bottom,#D0D0D0,#A0A0A0);border-radius:8px;border:1px solid #808080;box-shadow:0 3px 8px rgba(0,0,0,0.35),inset 0 1px 0 rgba(255,255,255,0.4)"></div>
+    </div>
+
+    <!-- 箱体 -->
+    <div style="width:100%;max-width:680px;margin-top:-3px;background:#212140;border-radius:20px 20px 16px 16px;border:3px solid #2E2E55;box-shadow:6px 6px 0 #0D0D22,0 16px 48px rgba(0,0,0,0.55);position:relative;overflow:hidden">
+
+      <!-- 箱面竖条纹 -->
+      <div style="position:absolute;inset:0;background:repeating-linear-gradient(to right,transparent 0,transparent 22px,rgba(255,255,255,0.025) 22px,rgba(255,255,255,0.025) 23px);pointer-events:none"></div>
+      <!-- 拉链外框线 -->
+      <div style="position:absolute;inset:8px;border:1.5px solid rgba(255,255,255,0.1);border-radius:14px;pointer-events:none"></div>
+
+      <!-- 对开展开：左扇 + 中轴拉链 + 右扇 -->
+      <div style="display:flex;min-height:420px">
+
+        <!-- 左扇（盖板） -->
+        <div style="flex:1;position:relative;overflow:hidden">
+          <div style="position:absolute;inset:0;background:linear-gradient(160deg,#1e2d55 0%,#1a2648 60%,#162038 100%)"></div>
+          <div style="position:absolute;inset:0;background:repeating-linear-gradient(135deg,transparent,transparent 10px,rgba(255,255,255,0.012) 10px,rgba(255,255,255,0.012) 11px)"></div>
+          <!-- 网兜纹理 -->
+          <div style="position:absolute;top:16px;left:12px;right:12px;height:130px;background:repeating-linear-gradient(0deg,transparent,transparent 7px,rgba(255,200,60,0.09) 7px,rgba(255,200,60,0.09) 8px),repeating-linear-gradient(90deg,transparent,transparent 7px,rgba(255,200,60,0.09) 7px,rgba(255,200,60,0.09) 8px);border:1.5px solid rgba(255,200,60,0.2);border-radius:8px;pointer-events:none"></div>
+          <!-- 压衣横条 -->
+          <div style="position:absolute;bottom:20px;left:14px;right:14px;display:flex;flex-direction:column;gap:10px;pointer-events:none">
+            <div style="height:3px;background:rgba(255,255,255,0.12);border-radius:2px"></div>
+            <div style="height:3px;background:rgba(255,255,255,0.09);border-radius:2px"></div>
+            <div style="height:3px;background:rgba(255,255,255,0.07);border-radius:2px;width:75%"></div>
+          </div>
+          <!-- 可放置区域（整个左扇） -->
+          <div id="zone-docs" class="ls-zone" style="position:absolute;inset:0;cursor:pointer">
+            <div class="ls-zone-items" style="position:absolute;top:20px;left:16px;right:16px;display:flex;flex-wrap:wrap;gap:8px;align-content:flex-start"></div>
+          </div>
+        </div>
+
+        <!-- 中轴拉链 -->
+        <div style="width:18px;flex-shrink:0;background:#0E0E24;display:flex;flex-direction:column;align-items:center;justify-content:space-between;padding:10px 0;position:relative;z-index:5">
+          <div style="width:10px;height:10px;background:#D4A800;border-radius:2px;border:1px solid #A07800;box-shadow:0 1px 3px rgba(0,0,0,0.6)"></div>
+          <div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:6px;margin:6px 0">
+            <div style="width:5px;height:5px;background:rgba(255,255,255,0.2);border-radius:50%"></div>
+            <div style="width:5px;height:5px;background:rgba(255,255,255,0.2);border-radius:50%"></div>
+            <div style="width:5px;height:5px;background:rgba(255,255,255,0.2);border-radius:50%"></div>
+            <div style="width:5px;height:5px;background:rgba(255,255,255,0.2);border-radius:50%"></div>
+            <div style="width:5px;height:5px;background:rgba(255,255,255,0.2);border-radius:50%"></div>
+            <div style="width:5px;height:5px;background:rgba(255,255,255,0.15);border-radius:50%"></div>
+            <div style="width:5px;height:5px;background:rgba(255,255,255,0.15);border-radius:50%"></div>
+            <div style="width:5px;height:5px;background:rgba(255,255,255,0.15);border-radius:50%"></div>
+            <div style="width:5px;height:5px;background:rgba(255,255,255,0.15);border-radius:50%"></div>
+            <div style="width:5px;height:5px;background:rgba(255,255,255,0.15);border-radius:50%"></div>
+          </div>
+          <div style="width:10px;height:10px;background:#D4A800;border-radius:2px;border:1px solid #A07800;box-shadow:0 1px 3px rgba(0,0,0,0.6)"></div>
+        </div>
+
+        <!-- 右扇（主仓） -->
+        <div style="flex:1.2;position:relative;overflow:hidden">
+          <div style="position:absolute;inset:0;background:linear-gradient(160deg,#1a2438 0%,#161e30 60%,#121828 100%)"></div>
+          <div style="position:absolute;inset:0;background:repeating-linear-gradient(135deg,transparent,transparent 10px,rgba(255,255,255,0.012) 10px,rgba(255,255,255,0.012) 11px)"></div>
+          <!-- 鞋子区底部分隔带 -->
+          <div style="position:absolute;bottom:0;left:0;right:0;height:140px;background:rgba(244,197,66,0.05);border-top:2px solid rgba(244,197,66,0.25);pointer-events:none"></div>
+          <!-- 主仓可放置区域（全部） -->
+          <div style="position:absolute;inset:0">
+            <!-- 衣物+洗漱区（上半） -->
+            <div id="zone-clothes" class="ls-zone" style="position:absolute;top:0;left:0;right:0;bottom:140px;cursor:pointer">
+              <div class="ls-zone-items" style="position:absolute;top:12px;left:12px;right:12px;bottom:8px;display:flex;flex-wrap:wrap;gap:8px;align-content:flex-start"></div>
+            </div>
+            <!-- 洗漱小件区（右上角叠加在衣物区内） -->
+            <div id="zone-small" class="ls-zone" style="position:absolute;top:0;right:0;width:45%;bottom:140px;cursor:pointer">
+              <div class="ls-zone-items" style="position:absolute;top:12px;left:4px;right:8px;bottom:8px;display:flex;flex-wrap:wrap;gap:6px;align-content:flex-start"></div>
+            </div>
+            <!-- 鞋子区（下部） -->
+            <div id="zone-shoes" class="ls-zone" style="position:absolute;bottom:0;left:0;right:0;height:140px;cursor:pointer">
+              <div class="ls-zone-items" style="position:absolute;top:8px;left:12px;right:12px;bottom:8px;display:flex;flex-wrap:wrap;gap:8px;align-content:flex-start"></div>
+            </div>
+          </div>
+          <!-- 固定带装饰 -->
+          <div style="position:absolute;bottom:140px;left:10px;right:10px;height:3px;background:rgba(255,255,255,0.1);border-radius:2px;pointer-events:none"></div>
+        </div>
+      </div>
+
+      <!-- 重量条 -->
+      <div style="background:rgba(0,0,0,0.45);padding:8px 18px;display:flex;align-items:center;gap:10px;border-top:1px solid rgba(255,255,255,0.07)">
+        <div style="flex:1;height:6px;background:rgba(255,255,255,0.08);border-radius:100px;overflow:hidden">
+          <div id="ls-weight-bar" style="height:100%;border-radius:100px;background:#52B788;transition:width .4s,background .4s;width:0%"></div>
+        </div>
+        <span id="ls-weight-label" style="font-size:12px;font-weight:700;color:rgba(255,255,255,0.7);min-width:62px;text-align:right">0 / 20 kg</span>
+      </div>
+    </div>
+
+    <!-- 底框 + 轮子 -->
+    <div style="width:100%;max-width:680px;background:#0E0E1A;height:10px;border-radius:0 0 8px 8px;margin-top:-2px;border:2px solid #07071A;border-top:none"></div>
+    <div style="width:100%;max-width:680px;display:flex;justify-content:space-between;padding:0 22px;margin-top:3px">
+      <div style="display:flex;flex-direction:column;align-items:center;gap:2px">
+        <div style="width:36px;height:15px;background:#484848;border-radius:4px 4px 2px 2px;border-top:1px solid #686868"></div>
+        <div style="width:40px;height:10px;background:#151515;border-radius:2px 2px 6px 6px;border-bottom:2px solid #000"></div>
+      </div>
+      <div style="display:flex;flex-direction:column;align-items:center;gap:2px">
+        <div style="width:36px;height:15px;background:#484848;border-radius:4px 4px 2px 2px;border-top:1px solid #686868"></div>
+        <div style="width:40px;height:10px;background:#151515;border-radius:2px 2px 6px 6px;border-bottom:2px solid #000"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 物品托盘（下方横排） -->
+  <div>
+    <div style="font-size:13px;font-weight:700;color:#6B5B45;margin-bottom:12px;letter-spacing:.04em">待整理物品 — 拖入行李箱</div>
+    <div id="ls-palette" style="display:flex;flex-wrap:wrap;gap:12px"></div>
+    <div id="ls-done-tip" style="display:none;margin-top:16px;background:#D8F3DC;border-radius:12px;padding:12px;font-size:13px;color:#2D6A4F;font-weight:600;text-align:center">
+      &#x1F389; 所有物品已放入！<br><span style="font-weight:400;font-size:12px">查看下方得分</span>
+    </div>
+  </div>
+
+  <div id="ls-score-panel" style="display:none;margin-top:20px;border-radius:14px;border:2px solid #D8F3DC;padding:20px;background:#F6FFF8">
+    <div style="font-family:'Ma Shan Zheng',cursive;font-size:20px;color:#2D6A4F;margin-bottom:12px">&#x1F4CA; 整理结果评分</div>
+    <div id="ls-score-items" style="display:flex;flex-direction:column;gap:8px;margin-bottom:16px"></div>
+    <div id="ls-score-total" style="font-size:18px;font-weight:700;color:#2D6A4F;padding-top:12px;border-top:1px solid #D8F3DC"></div>
+    <button onclick="resetLuggageSim()" style="margin-top:14px;padding:8px 20px;border-radius:100px;border:2px solid #2D6A4F;background:transparent;color:#2D6A4F;font-size:14px;font-weight:600;cursor:pointer">&#x1F504; 重新整理</button>
+  </div>
+</div>`;
+}
+
+// SVG 实物图形
+const LS_SVGS = {
+  shoes1: `<svg viewBox="0 0 64 40" xmlns="http://www.w3.org/2000/svg">
+    <path d="M4,30 Q4,22 12,20 L28,18 Q36,16 44,20 L58,26 Q60,28 58,32 L10,34 Q4,34 4,30Z" fill="#E53935"/>
+    <path d="M12,20 L28,18 Q36,16 44,20 L44,24 Q36,20 28,22 L12,24Z" fill="#FFCDD2"/>
+    <path d="M44,20 L58,26 L58,28 L44,22Z" fill="#B71C1C"/>
+    <ellipse cx="18" cy="27" rx="3" ry="2" fill="white" opacity="0.5"/>
+    <ellipse cx="26" cy="26" rx="3" ry="2" fill="white" opacity="0.5"/>
+    <path d="M4,30 Q4,34 10,34 L58,32 Q60,30 58,26" fill="none" stroke="#B71C1C" stroke-width="1.5"/>
+    <path d="M8,32 L56,30" stroke="white" stroke-width="0.8" opacity="0.4"/>
+  </svg>`,
+  shoes2: `<svg viewBox="0 0 64 36" xmlns="http://www.w3.org/2000/svg">
+    <path d="M6,26 Q6,20 14,18 L38,16 Q46,16 52,20 L56,24 Q58,28 54,30 L10,32 Q6,32 6,26Z" fill="#FF8F00"/>
+    <path d="M14,18 L38,16 Q46,16 52,20 L52,23 Q46,19 38,20 L14,22Z" fill="#FFE0B2"/>
+    <path d="M6,26 L6,30 Q6,32 10,32 L54,30 Q58,28 56,24" fill="none" stroke="#E65100" stroke-width="1.5"/>
+    <line x1="20" y1="22" x2="20" y2="30" stroke="white" stroke-width="0.8" opacity="0.5"/>
+    <line x1="28" y1="21" x2="28" y2="30" stroke="white" stroke-width="0.8" opacity="0.5"/>
+    <line x1="36" y1="21" x2="36" y2="30" stroke="white" stroke-width="0.8" opacity="0.5"/>
+  </svg>`,
+  tshirt: `<svg viewBox="0 0 60 52" xmlns="http://www.w3.org/2000/svg">
+    <path d="M18,6 Q30,2 42,6 L54,14 L46,22 L42,18 L42,48 L18,48 L18,18 L14,22 L6,14 Z" fill="#1565C0"/>
+    <path d="M18,6 Q30,2 42,6 L54,14 L46,22 L42,18" fill="none" stroke="#0D47A1" stroke-width="1"/>
+    <path d="M6,14 L14,22 L18,18" fill="none" stroke="#0D47A1" stroke-width="1"/>
+    <path d="M22,6 Q30,4 38,6" fill="none" stroke="#1976D2" stroke-width="1.5"/>
+    <rect x="22" y="20" width="16" height="2" rx="1" fill="#1976D2" opacity="0.6"/>
+  </svg>`,
+  pants: `<svg viewBox="0 0 52 60" xmlns="http://www.w3.org/2000/svg">
+    <path d="M6,4 L46,4 L46,10 L42,10 L38,52 L28,52 L26,32 L24,52 L14,52 L10,10 L6,10 Z" fill="#37474F"/>
+    <line x1="26" y1="10" x2="26" y2="52" stroke="#455A64" stroke-width="1.5"/>
+    <rect x="6" y="4" width="40" height="8" rx="2" fill="#455A64"/>
+    <rect x="20" y="4" width="12" height="3" rx="1" fill="#607D8B"/>
+    <path d="M14,20 Q20,18 26,20" fill="none" stroke="#546E7A" stroke-width="1" opacity="0.6"/>
+  </svg>`,
+  jacket: `<svg viewBox="0 0 64 56" xmlns="http://www.w3.org/2000/svg">
+    <path d="M20,4 Q32,2 44,4 L56,14 L50,22 L44,16 L44,52 L20,52 L20,16 L14,22 L8,14 Z" fill="#2E7D32"/>
+    <path d="M28,4 L28,52" stroke="#1B5E20" stroke-width="1.5"/>
+    <path d="M20,4 Q32,2 44,4" fill="none" stroke="#388E3C" stroke-width="1"/>
+    <path d="M8,14 L14,22 L20,16" fill="none" stroke="#1B5E20" stroke-width="1"/>
+    <path d="M44,16 L50,22 L56,14" fill="none" stroke="#1B5E20" stroke-width="1"/>
+    <circle cx="30" cy="24" r="2" fill="#1B5E20"/>
+    <circle cx="30" cy="32" r="2" fill="#1B5E20"/>
+    <circle cx="30" cy="40" r="2" fill="#1B5E20"/>
+  </svg>`,
+  socks: `<svg viewBox="0 0 56 44" xmlns="http://www.w3.org/2000/svg">
+    <path d="M16,4 L16,24 Q16,36 28,38 Q40,40 42,30 L42,22 L36,22 L36,30 Q36,34 28,34 Q20,34 20,26 L20,4 Z" fill="#EF5350"/>
+    <rect x="16" y="4" width="20" height="6" rx="2" fill="#E57373"/>
+    <line x1="16" y1="14" x2="36" y2="14" stroke="#B71C1C" stroke-width="1.5" opacity="0.5"/>
+    <line x1="16" y1="19" x2="36" y2="19" stroke="#B71C1C" stroke-width="1.5" opacity="0.5"/>
+  </svg>`,
+  towel: `<svg viewBox="0 0 60 48" xmlns="http://www.w3.org/2000/svg">
+    <rect x="6" y="8" width="48" height="32" rx="3" fill="#0097A7"/>
+    <rect x="6" y="8" width="48" height="6" rx="3" fill="#00838F"/>
+    <line x1="6" y1="20" x2="54" y2="20" stroke="#00ACC1" stroke-width="1.5" opacity="0.5"/>
+    <line x1="6" y1="28" x2="54" y2="28" stroke="#00ACC1" stroke-width="1.5" opacity="0.5"/>
+    <line x1="6" y1="36" x2="54" y2="36" stroke="#00ACC1" stroke-width="1.5" opacity="0.5"/>
+    <rect x="14" y="8" width="6" height="32" fill="#00838F" opacity="0.3"/>
+    <rect x="40" y="8" width="6" height="32" fill="#00838F" opacity="0.3"/>
+  </svg>`,
+  wash: `<svg viewBox="0 0 44 60" xmlns="http://www.w3.org/2000/svg">
+    <rect x="8" y="16" width="28" height="38" rx="6" fill="#AB47BC"/>
+    <rect x="8" y="16" width="28" height="10" rx="6" fill="#8E24AA"/>
+    <rect x="14" y="6" width="16" height="12" rx="4" fill="#CE93D8"/>
+    <rect x="18" y="2" width="8" height="8" rx="3" fill="#9C27B0"/>
+    <rect x="12" y="30" width="20" height="3" rx="1.5" fill="#CE93D8" opacity="0.7"/>
+    <rect x="12" y="36" width="14" height="2" rx="1" fill="#CE93D8" opacity="0.5"/>
+    <circle cx="22" cy="48" r="4" fill="#CE93D8" opacity="0.4"/>
+  </svg>`,
+  phone: `<svg viewBox="0 0 48 56" xmlns="http://www.w3.org/2000/svg">
+    <rect x="8" y="4" width="32" height="20" rx="4" fill="#424242"/>
+    <rect x="10" y="6" width="28" height="14" rx="3" fill="#616161"/>
+    <line x1="24" y1="26" x2="24" y2="42" stroke="#757575" stroke-width="3" stroke-linecap="round"/>
+    <rect x="10" y="42" width="28" height="10" rx="3" fill="#424242"/>
+    <circle cx="24" cy="47" r="3" fill="#9E9E9E"/>
+    <rect x="14" y="8" width="20" height="10" rx="2" fill="#1565C0" opacity="0.8"/>
+    <line x1="8" y1="24" x2="40" y2="24" stroke="#555" stroke-width="1"/>
+  </svg>`,
+  id: `<svg viewBox="0 0 60 44" xmlns="http://www.w3.org/2000/svg">
+    <rect x="4" y="6" width="52" height="32" rx="5" fill="#F57F17"/>
+    <rect x="4" y="6" width="52" height="10" rx="5" fill="#E65100"/>
+    <rect x="4" y="11" width="52" height="5" fill="#E65100"/>
+    <circle cx="18" cy="26" r="7" fill="#FFE0B2"/>
+    <rect x="28" y="20" width="22" height="3" rx="1.5" fill="white" opacity="0.8"/>
+    <rect x="28" y="26" width="16" height="2" rx="1" fill="white" opacity="0.6"/>
+    <rect x="28" y="30" width="18" height="2" rx="1" fill="white" opacity="0.6"/>
+    <rect x="12" y="9" width="16" height="4" rx="1" fill="white" opacity="0.3"/>
+  </svg>`,
+  book: `<svg viewBox="0 0 52 60" xmlns="http://www.w3.org/2000/svg">
+    <rect x="8" y="4" width="36" height="52" rx="3" fill="#5C6BC0"/>
+    <rect x="8" y="4" width="8" height="52" rx="3" fill="#3949AB"/>
+    <rect x="16" y="12" width="22" height="2" rx="1" fill="white" opacity="0.7"/>
+    <rect x="16" y="17" width="18" height="2" rx="1" fill="white" opacity="0.5"/>
+    <rect x="16" y="22" width="20" height="2" rx="1" fill="white" opacity="0.5"/>
+    <rect x="16" y="32" width="22" height="14" rx="2" fill="white" opacity="0.15"/>
+  </svg>`,
+  meds: `<svg viewBox="0 0 52 52" xmlns="http://www.w3.org/2000/svg">
+    <rect x="8" y="8" width="36" height="36" rx="8" fill="#F44336"/>
+    <rect x="8" y="8" width="36" height="18" rx="8" fill="#EF9A9A"/>
+    <rect x="8" y="21" width="36" height="5" fill="#FFEBEE" opacity="0.5"/>
+    <rect x="21" y="16" width="10" height="20" rx="3" fill="white" opacity="0.9"/>
+    <rect x="16" y="21" width="20" height="10" rx="3" fill="white" opacity="0.9"/>
+  </svg>`,
+};
+
+const LS_ITEMS = [
+  { id:'shoes1', label:'运动鞋',  zone:'shoes',   weight:1.2, tip:'正确！鞋子放底层，重心稳固' },
+  { id:'shoes2', label:'拖鞋',    zone:'shoes',   weight:0.4, tip:'正确！轻便拖鞋放底层空隙处' },
+  { id:'tshirt', label:'T恤×3',  zone:'clothes', weight:0.6, tip:'正确！衣物卷叠放中层节省空间' },
+  { id:'pants',  label:'长裤×2', zone:'clothes', weight:0.8, tip:'正确！裤子卷起竖立摆放' },
+  { id:'jacket', label:'外套',   zone:'clothes', weight:0.9, tip:'正确！外套折叠置中层' },
+  { id:'socks',  label:'袜子×5', zone:'small',   weight:0.3, tip:'正确！袜子填充缝隙最合适' },
+  { id:'towel',  label:'毛巾',   zone:'small',   weight:0.3, tip:'正确！洗漱用品归入洗漱区' },
+  { id:'wash',   label:'洗漱包', zone:'small',   weight:0.5, tip:'正确！洗漱包放洗漱区' },
+  { id:'phone',  label:'充电器', zone:'docs',    weight:0.2, tip:'正确！电子设备放盖袋方便取用' },
+  { id:'id',     label:'证件包', zone:'docs',    weight:0.1, tip:'正确！证件放盖袋，安全易取' },
+  { id:'book',   label:'书本',   zone:'clothes', weight:1.5, tip:'提示：书本较重，建议随身携带' },
+  { id:'meds',   label:'常备药', zone:'small',   weight:0.1, tip:'正确！药品放洗漱区方便取用' },
+]
+
+let lsDragging = null;
+
+function initLuggageSim() {
+  const palette = document.getElementById('ls-palette');
+  if (!palette) return;
+  palette.innerHTML = '';
+  LS_ITEMS.forEach(item => {
+    const el = document.createElement('div');
+    el.id = 'lsitem-' + item.id;
+    el.draggable = true;
+    el.title = item.label;
+    el.style.cssText = 'display:flex;flex-direction:column;align-items:center;gap:5px;padding:10px 8px 8px;background:#F5EFD8;border-radius:12px;cursor:grab;border:2px solid transparent;transition:all .15s;width:72px;flex-shrink:0';
+    el.innerHTML = '<div style="width:52px;height:44px">' + (LS_SVGS[item.id]||'') + '</div><span style="font-size:11px;font-weight:600;color:#2C2416;text-align:center;line-height:1.2">' + item.label + '</span>';
+    el.addEventListener('dragstart', () => { lsDragging = item.id; el.style.opacity = '.4'; });
+    el.addEventListener('dragend', () => { el.style.opacity = '1'; lsDragging = null; });
+    el.addEventListener('touchstart', () => { lsDragging = item.id; }, {passive:true});
+    el.addEventListener('touchend', e => {
+      const t = e.changedTouches[0];
+      const target = document.elementFromPoint(t.clientX, t.clientY);
+      const zone = target && target.closest('.ls-zone');
+      if (zone) dropIntoZone(zone, item.id);
+      lsDragging = null;
+    });
+    palette.appendChild(el);
+  });
+  document.querySelectorAll('.ls-zone').forEach(zone => {
+    zone.addEventListener('dragover', e => { e.preventDefault(); zone.style.borderColor = 'rgba(255,255,255,0.85)'; zone.style.background = 'rgba(255,255,255,0.22)'; });
+    zone.addEventListener('dragleave', () => { zone.style.borderColor = 'rgba(255,255,255,0.35)'; zone.style.background = 'rgba(255,255,255,0.12)'; });
+    zone.addEventListener('drop', e => { e.preventDefault(); zone.style.borderColor = 'rgba(255,255,255,0.35)'; zone.style.background = 'rgba(255,255,255,0.12)'; if (lsDragging) dropIntoZone(zone, lsDragging); });
+  });
+}
+
+function dropIntoZone(zone, itemId) {
+  const item = LS_ITEMS.find(i => i.id === itemId);
+  const srcEl = document.getElementById('lsitem-' + itemId);
+  if (!item || !srcEl || srcEl.dataset.placed) return;
+  srcEl.dataset.placed = zone.id;
+  srcEl.style.display = 'none';
+  const chip = document.createElement('div');
+  chip.title = item.label;
+  chip.style.cssText = 'width:44px;height:38px;flex-shrink:0';
+  chip.innerHTML = LS_SVGS[item.id] || '';
+  zone.querySelector('.ls-zone-items').appendChild(chip);
+  updateWeight();
+  checkAllPlaced();
+}
+
+function updateWeight() {
+  let total = 0;
+  LS_ITEMS.forEach(item => { const el = document.getElementById('lsitem-' + item.id); if (el && el.dataset.placed) total += item.weight; });
+  total = Math.round(total * 10) / 10;
+  const pct = Math.min(100, (total / 20) * 100);
+  const bar = document.getElementById('ls-weight-bar');
+  const label = document.getElementById('ls-weight-label');
+  if (!bar || !label) return;
+  bar.style.width = pct + '%';
+  bar.style.background = pct > 85 ? '#E76F51' : pct > 60 ? '#F4C542' : '#52B788';
+  label.textContent = total + ' / 20 kg';
+}
+
+function checkAllPlaced() {
+  const allDone = LS_ITEMS.every(item => { const el = document.getElementById('lsitem-' + item.id); return el && el.dataset.placed; });
+  if (allDone) { document.getElementById('ls-done-tip').style.display = 'block'; setTimeout(showLuggageScore, 600); }
+}
+
+function showLuggageScore() {
+  const panel = document.getElementById('ls-score-panel');
+  const itemsEl = document.getElementById('ls-score-items');
+  const totalEl = document.getElementById('ls-score-total');
+  if (!panel) return;
+  let correct = 0;
+  const rows = LS_ITEMS.map(item => {
+    const el = document.getElementById('lsitem-' + item.id);
+    const placed = el && el.dataset.placed;
+    const ok = placed === ('zone-' + item.zone);
+    if (ok) correct++;
+    return '<div style="display:flex;align-items:flex-start;gap:10px;padding:8px 12px;border-radius:10px;background:' + (ok?'#F6FFF8':'#FFF5F5') + ';border:1px solid ' + (ok?'#C8E6C9':'#FFCDD2') + '">' +
+      '<div style="width:36px;height:30px;flex-shrink:0">' + (LS_SVGS[item.id]||'') + '</div>' +
+      '<div style="flex:1"><div style="font-size:13px;font-weight:700;color:#2C2416">' + item.label + '</div>' +
+      '<div style="font-size:12px;color:' + (ok?'#2E7D32':'#C62828') + ';margin-top:2px">' + item.tip + '</div></div>' +
+      '<span style="font-size:18px">' + (ok?'&#x2705;':'&#x274C;') + '</span></div>';
+  });
+  itemsEl.innerHTML = rows.join('');
+  const pct = Math.round((correct / LS_ITEMS.length) * 100);
+  const star = pct === 100 ? '&#x1F31F;&#x1F31F;&#x1F31F;' : pct >= 80 ? '&#x2B50;&#x2B50;&#x2B50;' : pct >= 60 ? '&#x2B50;&#x2B50;' : '&#x2B50;';
+  const msg = pct===100?'太棒了！你已经掌握行李箱整理的精髓！':pct>=80?'做得很好！再仔细看看标红的物品应该放哪里。':'继续加油，重新整理一次看看！';
+  totalEl.innerHTML = star + ' 得分：' + correct + ' / ' + LS_ITEMS.length + ' 件放置正确（' + pct + '分）<br><span style="font-size:13px;font-weight:400;color:#4A5568;margin-top:4px;display:block">' + msg + '</span>';
+  panel.style.display = 'block';
+  panel.scrollIntoView({ behavior:'smooth', block:'nearest' });
+}
+
+function resetLuggageSim() {
+  LS_ITEMS.forEach(item => { const el = document.getElementById('lsitem-' + item.id); if (el) { delete el.dataset.placed; el.style.display = 'flex'; } });
+  document.querySelectorAll('.ls-zone-items').forEach(z => z.innerHTML = '');
+  const bar = document.getElementById('ls-weight-bar'); if(bar) bar.style.width='0%';
+  const label = document.getElementById('ls-weight-label'); if(label) label.textContent='0 / 20 kg';
+  const tip = document.getElementById('ls-done-tip'); if(tip) tip.style.display='none';
+  const panel = document.getElementById('ls-score-panel'); if(panel) panel.style.display='none';
+}
+
+function toggleMaterial(courseId, idx) {
+  const item = document.getElementById(`mat-${courseId}-${idx}`);
+  const check = document.getElementById(`mcheck-${courseId}-${idx}`);
+  item.classList.toggle('checked');
+  check.textContent = item.classList.contains('checked') ? '✓' : '';
+}
+
+// ===== WALL =====
+function renderWall() {
+  const filters = document.getElementById('wall-filters');
+  const groups = ['all', ...new Set(ACHIEVEMENTS.map(a => a.group))];
+  filters.innerHTML = [{ id: 'all', name: '全部作品' }, ...TASK_GROUPS.filter(g => groups.includes(g.id))].map(g => `
+    <div class="wall-filter ${g.id === 'all' ? 'active' : ''}" onclick="filterWall('${g.id}', this)">${g.name || g}</div>
+  `).join('');
+  renderWallCards('all');
+}
+
+function filterWall(id, el) {
+  document.querySelectorAll('.wall-filter').forEach(f => f.classList.remove('active'));
+  el.classList.add('active');
+  renderWallCards(id);
+}
+
+function renderWallCards(groupId) {
+  const data = groupId === 'all' ? ACHIEVEMENTS : ACHIEVEMENTS.filter(a => a.group === groupId);
+  document.getElementById('wall-grid').innerHTML = data.map(a => `
+    <div class="ach-card">
+      <div class="ach-card-top">
+        <div class="ach-user-avatar" style="background:var(--green-pale)">${a.avatar}</div>
+        <div>
+          <div class="ach-user-name">${a.user}</div>
+          <div class="ach-user-class">${a.class}</div>
+        </div>
+      </div>
+      <div class="ach-card-course"><span class="tag tag-green" style="font-size:11px">${a.course}</span></div>
+      <h3>${a.title}</h3>
+      <p>${a.desc}</p>
+      ${a.hasImg ? `<div class="ach-card-img">${a.imgEmoji}</div>` : ''}
+      <div class="ach-card-footer">
+        <div class="ach-stars">${'★'.repeat(a.stars)}${'☆'.repeat(5-a.stars)}</div>
+        <button class="like-btn ${likedSet.has(a.id) ? 'liked' : ''}" onclick="toggleLike(${a.id}, this)">
+          ${likedSet.has(a.id) ? '❤️' : '🤍'} <span id="likes-${a.id}">${a.likes + (likedSet.has(a.id) ? 1 : 0)}</span>
+        </button>
+      </div>
+    </div>
+  `).join('');
+}
+
+function toggleLike(id, btn) {
+  const a = ACHIEVEMENTS.find(x => x.id === id);
+  if (likedSet.has(id)) {
+    likedSet.delete(id);
+    btn.classList.remove('liked');
+    btn.innerHTML = `🤍 <span id="likes-${id}">${a.likes}</span>`;
+  } else {
+    likedSet.add(id);
+    btn.classList.add('liked');
+    btn.innerHTML = `❤️ <span id="likes-${id}">${a.likes + 1}</span>`;
+  }
+}
+
+// ===== SUBMIT =====
+function resetSubmit() {
+  submitStep = 1;
+  document.getElementById('submit-form-area').style.display = '';
+  document.getElementById('submit-success').classList.remove('show');
+  [1,2,3,4].forEach(s => {
+    document.getElementById(`step-${s}-content`).style.display = s === 1 ? '' : 'none';
+    const dot = document.getElementById(`sdot-${s}`);
+    dot.classList.remove('current','done');
+    if (s === 1) dot.classList.add('current');
+  });
+  [1,2,3].forEach(s => document.getElementById(`scon-${s}`).classList.remove('done'));
+  // Render course picker
+  document.getElementById('course-picker').innerHTML = COURSES.map(c => `
+    <div class="course-pick-item" onclick="pickCourse(this, '${c.title}')">${c.emoji} ${c.title}</div>
+  `).join('');
+}
+
+function pickCourse(el, title) {
+  document.querySelectorAll('.course-pick-item').forEach(i => i.classList.remove('selected'));
+  el.classList.add('selected');
+}
+
+function goSubmitStep(n) {
+  document.getElementById(`step-${submitStep}-content`).style.display = 'none';
+  document.getElementById(`sdot-${submitStep}`).classList.remove('current');
+  document.getElementById(`sdot-${submitStep}`).classList.add('done');
+  if (submitStep > 1) document.getElementById(`scon-${submitStep-1}`).classList.add('done');
+  submitStep = n;
+  document.getElementById(`step-${n}-content`).style.display = '';
+  document.getElementById(`sdot-${n}`).classList.add('current');
+}
+
+window.submitStep = goSubmitStep;
+
+function submitFinal() {
+  document.getElementById('submit-form-area').style.display = 'none';
+  document.getElementById('submit-success').classList.add('show');
+}
+
+// ===== STARS =====
+function setStar(row, val) {
+  starValues[row] = val;
+  const stars = document.querySelectorAll(`#stars-${row} .star`);
+  stars.forEach((s, i) => s.classList.toggle('lit', i < val));
+  document.getElementById(`star-desc-${row}`).textContent = starDescs[val];
+}
+
+// ===== PROFILE =====
+function renderProfile() {
+  const list = document.getElementById('timeline-list');
+  list.innerHTML = TIMELINE_DATA.map((t, i) => `
+    <div class="timeline-item">
+      <div class="timeline-dot-wrap">
+        <div class="timeline-dot"></div>
+        ${i < TIMELINE_DATA.length - 1 ? '<div class="timeline-line"></div>' : ''}
+      </div>
+      <div style="flex:1;margin-bottom:${i < TIMELINE_DATA.length - 1 ? '0' : '0'}">
+        <div class="timeline-date">${t.date}</div>
+        <div class="timeline-card">
+          <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px">
+            <span style="font-size:24px">${t.emoji}</span>
+            <span class="tag tag-green" style="font-size:11px">${t.course}</span>
+          </div>
+          <h4>${t.title}</h4>
+          <p>${t.desc}</p>
+          <div class="timeline-card-footer">
+            <span style="color:var(--yellow);font-size:13px">${'★'.repeat(t.stars)}${'☆'.repeat(5-t.stars)}</span>
+            <span style="font-size:12px;color:var(--text-muted)">❤️ ${t.likes} 个赞</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  `).join('');
+}
+
+// ===== INIT =====
+renderHome();
+</script>
+</body>
+</html>
