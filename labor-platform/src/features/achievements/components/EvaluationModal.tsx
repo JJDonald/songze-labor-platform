@@ -45,7 +45,7 @@ interface EvaluationModalProps {
   onSuccess: () => void;
 }
 
-const API_BASE = 'http://localhost:3001';
+import { API_ORIGIN } from '@/lib/api';
 
 export const EvaluationModal = ({ isOpen, achievementId, onClose, onSuccess }: EvaluationModalProps) => {
   const [achievement, setAchievement] = useState<Achievement | null>(null);
@@ -151,7 +151,7 @@ export const EvaluationModal = ({ isOpen, achievementId, onClose, onSuccess }: E
                 hasRealImage([img]) ? (
                   <img
                     key={idx}
-                    src={`${API_BASE}${img}`}
+                    src={`${API_ORIGIN}${img}`}
                     alt={`照片 ${idx + 1}`}
                     className="w-full aspect-square object-cover rounded-lg"
                   />

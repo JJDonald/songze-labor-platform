@@ -109,10 +109,10 @@ export const CourseDetail = ({ course, isOpen, onClose }: CourseDetailProps) => 
           )}
 
           <div className="flex gap-3">
-            <Button variant="outline" onClick={onClose} className="flex-1">
+            <Button variant="ghost" onClick={onClose} className="flex-1">
               关闭
             </Button>
-            <Button variant="green" onClick={handleSubmitAchievement} className="flex-1">
+            <Button variant="primary" onClick={handleSubmitAchievement} className="flex-1">
               ✍️ 提交我的成果
             </Button>
           </div>

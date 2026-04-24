@@ -3,12 +3,11 @@ import { Avatar, Stars } from '@/features/shared/components/ui';
 import type { Achievement } from '../types';
 import { LikeButton } from './LikeButton';
 import { EvaluationModal } from './EvaluationModal';
+import { API_ORIGIN } from '@/lib/api';
 
 interface AchievementCardProps {
   achievement: Achievement;
 }
-
-const API_BASE = 'http://localhost:3001';
 
 export const AchievementCard = ({ achievement }: AchievementCardProps) => {
   const [showEvalModal, setShowEvalModal] = useState(false);
@@ -54,7 +53,7 @@ export const AchievementCard = ({ achievement }: AchievementCardProps) => {
           <div className="mb-3">
             {hasRealImage(achievement.images) ? (
               <img
-                src={`${API_BASE}${achievement.images[0]}`}
+                src={`${API_ORIGIN}${achievement.images[0]}`}
                 alt="成果照片"
                 className="w-full rounded-xl object-cover"
                 style={{ maxHeight: '200px' }}

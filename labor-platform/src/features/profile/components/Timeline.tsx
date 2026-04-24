@@ -1,13 +1,12 @@
 import { formatDate } from '@/features/shared/lib';
 import { Stars } from '@/features/shared/components/ui';
 import type { Achievement } from '@/features/achievements/types';
+import { API_ORIGIN } from '@/lib/api';
 
 interface TimelineProps {
   achievements: Achievement[];
   onEdit?: (achievement: Achievement) => void;
 }
-
-const API_BASE = 'http://localhost:3001';
 
 export const Timeline = ({ achievements, onEdit }: TimelineProps) => {
   const hasRealImage = (images: string[]) => {
@@ -39,7 +38,7 @@ export const Timeline = ({ achievements, onEdit }: TimelineProps) => {
                   {item.images.slice(0, 3).map((img, idx) => (
                     <img
                       key={idx}
-                      src={`${API_BASE}${img}`}
+                      src={`${API_ORIGIN}${img}`}
                       alt={`照片 ${idx + 1}`}
                       className="w-full aspect-square object-cover rounded-lg bg-brand-sand"
                     />

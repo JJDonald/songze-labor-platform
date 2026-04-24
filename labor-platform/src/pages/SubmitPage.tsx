@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { Button, Input, Container } from '@/features/shared';
 import { useUserStore } from '@/features/auth';
 import { achievementsApi } from '@/features/achievements/api';
+import { API_ORIGIN } from '@/lib/api';
 import { cn } from '@/features/shared/lib';
 import { api } from '@/lib/api';
 
@@ -258,7 +259,7 @@ export const SubmitPage = () => {
                   {images.map((img, index) => (
                     <div key={index} className="relative group">
                       <img
-                        src={`http://localhost:3001${img}`}
+src={`${API_ORIGIN}${img}`}
                         alt={`照片 ${index + 1}`}
                         className="w-full aspect-square object-cover rounded-lg bg-brand-sand"
                       />
@@ -381,7 +382,7 @@ export const SubmitPage = () => {
                   {images.map((img, index) => (
                     <img
                       key={index}
-                      src={`http://localhost:3001${img}`}
+                      src={`${API_ORIGIN}${img}`}
                       alt={`照片 ${index + 1}`}
                       className="w-full aspect-square object-cover rounded-lg"
                     />

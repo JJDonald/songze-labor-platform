@@ -3,6 +3,7 @@ import { Modal, Button, Input } from '@/features/shared/components/ui';
 import type { Achievement } from '@/features/achievements/types';
 import { achievementsApi } from '@/features/achievements/api';
 import { cn } from '@/features/shared/lib';
+import { API_ORIGIN } from '@/lib/api';
 
 interface EditAchievementModalProps {
   isOpen: boolean;
@@ -10,8 +11,6 @@ interface EditAchievementModalProps {
   onClose: () => void;
   onSuccess: () => void;
 }
-
-const API_BASE = 'http://localhost:3001';
 
 export const EditAchievementModal = ({ isOpen, achievement, onClose, onSuccess }: EditAchievementModalProps) => {
   const [title, setTitle] = useState('');
@@ -146,7 +145,7 @@ export const EditAchievementModal = ({ isOpen, achievement, onClose, onSuccess }
                 <div key={index} className="relative group">
                   {img.startsWith('/uploads') ? (
                     <img
-                      src={`${API_BASE}${img}`}
+                      src={`${API_ORIGIN}${img}`}
                       alt={`照片 ${index + 1}`}
                       className="w-full aspect-square object-cover rounded-lg bg-brand-sand"
                     />

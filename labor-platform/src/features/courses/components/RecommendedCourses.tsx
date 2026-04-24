@@ -2,7 +2,6 @@ import { useNavigate } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { coursesApi } from '../api/coursesApi';
 import { CourseCard } from './CourseCard';
-import type { Course } from '../types';
 
 export const RecommendedCourses = ({ limit = 3 }: { limit?: number }) => {
   const navigate = useNavigate();
