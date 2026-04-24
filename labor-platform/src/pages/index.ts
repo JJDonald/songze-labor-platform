@@ -3,3 +3,7 @@ export { AchievementsPage } from './AchievementsPage';
 export { ProfilePage } from './ProfilePage';
 export { SubmitPage } from './SubmitPage';
 export { CoursesPage } from './CoursesPage';
+export { AdminDashboard } from './AdminDashboard';
+export { AdminUsers } from './AdminUsers';
+export { AdminCourses } from './AdminCourses';
+export { AdminAchievements } from './AdminAchievements';
