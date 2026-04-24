@@ -62,9 +62,27 @@ async function main() {
     });
   }
 
-  // 4. 创建测试学生
-  console.log('创建测试学生...');
-  const hashedPassword = await bcrypt.hash('123456', 10);
+// 4. 创建管理员账户
+console.log('创建管理员账户...');
+const adminPassword = await bcrypt.hash('admin123', 10);
+await prisma.student.upsert({
+  where: { studentId: 'admin' },
+  update: { nickname: '管理员', password: adminPassword, role: 'ADMIN' },
+  create: {
+    id: uuidv4(),
+    studentId: 'admin',
+    nickname: '管理员',
+    password: adminPassword,
+    avatarEmoji: '👨‍💼',
+    role: 'ADMIN',
+    gradeId: 6,
+    classCode: '管理员',
+  },
+});
+
+// 5. 创建测试学生
+console.log('创建测试学生...');
+const hashedPassword = await bcrypt.hash('123456', 10);
   
   const testStudents = [
     { studentId: '2024060101', nickname: '小明', gradeId: 6, classCode: '1班' },

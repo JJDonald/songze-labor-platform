@@ -7,6 +7,11 @@ datasource db {
   url      = "file:./dev.db"
 }
 
+enum Role {
+  STUDENT
+  ADMIN
+}
+
 model TaskGroup {
   id        String   @id
   name      String   @unique
@@ -46,6 +51,7 @@ model Course {
   safetyTips  String
   
   coverSvg    String?
+  coverImage  String?  // 上传的封面图片路径
   
   isActive    Boolean  @default(true)
   createdAt   DateTime @default(now())
@@ -62,6 +68,7 @@ model Student {
   password      String
   nickname      String
   avatarEmoji   String   @default("🌟")
+  role          Role     @default(STUDENT)
   
   gradeId       Int
   grade         Grade    @relation(fields: [gradeId], references: [id])
