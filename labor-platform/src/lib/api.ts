@@ -1,4 +1,10 @@
-const API_BASE = 'http://localhost:3001/api';
+// 从环境变量读取 API 地址，默认 localhost 开发环境
+const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:3001/api';
+
+// 导出基础 URL 供图片等静态资源拼接使用
+export const API_ORIGIN = import.meta.env.VITE_API_URL
+  ? import.meta.env.VITE_API_URL.replace('/api', '')
+  : 'http://localhost:3001';
 
 interface ApiResponse<T> {
   code: number;
@@ -21,7 +27,7 @@ class ApiClient {
 
   async request<T>(endpoint: string, options: RequestInit = {}): Promise<ApiResponse<T>> {
     const token = this.getToken();
-    
+
     const headers: HeadersInit = {
       'Content-Type': 'application/json',
       ...options.headers,
@@ -36,8 +42,23 @@ class ApiClient {
       headers,
     });
 
+    // 检查 HTTP 状态码
+    if (!response.ok) {
+      // 尝试解析服务器返回的 JSON 错误信息
+      try {
+        const errorData = await response.json();
+        return errorData;
+      } catch {
+        // 服务器返回非 JSON（如 502 HTML 错误页）
+        return {
+          code: response.status,
+          message: `请求失败 (${response.status})`,
+          data: null as T,
+        };
+      }
+    }
+
     const data = await response.json();
-    
     return data;
   }
 
@@ -73,6 +94,20 @@ class ApiClient {
       headers: token ? { Authorization: `Bearer ${token}` } : {},
       body: formData,
     });
+
+    // 检查 HTTP 状态码
+    if (!response.ok) {
+      try {
+        const errorData = await response.json();
+        return errorData;
+      } catch {
+        return {
+          code: response.status,
+          message: `上传失败 (${response.status})`,
+          data: null as T,
+        };
+      }
+    }
 
     return response.json();
   }

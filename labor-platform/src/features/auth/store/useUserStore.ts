@@ -11,11 +11,13 @@ interface User {
   classCode: string;
   totalAchievements?: number;
   totalLikes?: number;
+  role?: 'STUDENT' | 'ADMIN';
 }
 
 interface UserState {
   currentUser: User | null;
   isAuthenticated: boolean;
+  token: string | null;
   isLoading: boolean;
   error: string | null;
   
@@ -32,6 +34,7 @@ export const useUserStore = create<UserState>()(
     (set, get) => ({
       currentUser: null,
       isAuthenticated: false,
+      token: null,
       isLoading: false,
       error: null,
 
@@ -50,6 +53,7 @@ export const useUserStore = create<UserState>()(
             set({
               currentUser: response.data.student,
               isAuthenticated: true,
+              token: response.data.token,
               isLoading: false,
             });
             return true;
@@ -76,6 +80,7 @@ export const useUserStore = create<UserState>()(
             set({
               currentUser: response.data.student,
               isAuthenticated: true,
+              token: response.data.token,
               isLoading: false,
             });
             return true;
@@ -91,7 +96,7 @@ export const useUserStore = create<UserState>()(
 
       logout: () => {
         api.clearAuthToken();
-        set({ currentUser: null, isAuthenticated: false });
+        set({ currentUser: null, isAuthenticated: false, token: null });
       },
 
       fetchCurrentUser: async () => {
@@ -101,7 +106,8 @@ export const useUserStore = create<UserState>()(
             set({ currentUser: response.data, isAuthenticated: true });
           }
         } catch (error) {
-          set({ currentUser: null, isAuthenticated: false });
+          set({ currentUser: null, isAuthenticated: false, token: null });
+          api.clearAuthToken();
         }
       },
 
@@ -135,7 +141,14 @@ export const useUserStore = create<UserState>()(
       partialize: (state) => ({
         currentUser: state.currentUser,
         isAuthenticated: state.isAuthenticated,
+        token: state.token,
       }),
+      // hydrate 时同步 token 到 api client
+      onRehydrateStorage: () => (state) => {
+        if (state?.token) {
+          api.setAuthToken(state.token);
+        }
+      },
     }
   )
 );
