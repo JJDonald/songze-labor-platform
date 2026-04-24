@@ -1,8 +1,17 @@
 import { Router } from 'express';
-import { PrismaClient } from '@prisma/client';
+import prisma from '../prisma.js';
 
 const router = Router();
-const prisma = new PrismaClient();
+
+// 安全的 JSON 解析，解析失败返回默认值
+function safeJsonParse(str: string | null | undefined, fallback: unknown = []) {
+  if (!str) return fallback;
+  try {
+    return JSON.parse(str);
+  } catch {
+    return fallback;
+  }
+}
 
 router.get('/grades', async (req, res) => {
   try {
@@ -77,11 +86,12 @@ router.get('/', async (req, res) => {
       emoji: c.emoji,
       color: c.color,
       description: c.description,
-      objectives: c.objectives ? JSON.parse(c.objectives) : [],
-      materials: c.materials ? JSON.parse(c.materials) : [],
-      steps: c.steps ? JSON.parse(c.steps) : [],
+      objectives: safeJsonParse(c.objectives),
+      materials: safeJsonParse(c.materials),
+      steps: safeJsonParse(c.steps),
       safetyTips: c.safetyTips,
       coverSvg: c.coverSvg,
+      coverImage: c.coverImage,
       grade: c.grade,
       taskGroup: c.taskGroup,
       semesterId: c.semesterId,
@@ -132,11 +142,12 @@ router.get('/:id', async (req, res) => {
       emoji: course.emoji,
       color: course.color,
       description: course.description,
-      objectives: course.objectives ? JSON.parse(course.objectives) : [],
-      materials: course.materials ? JSON.parse(course.materials) : [],
-      steps: course.steps ? JSON.parse(course.steps) : [],
+      objectives: safeJsonParse(course.objectives),
+      materials: safeJsonParse(course.materials),
+      steps: safeJsonParse(course.steps),
       safetyTips: course.safetyTips,
       coverSvg: course.coverSvg,
+      coverImage: course.coverImage,
       grade: course.grade,
       taskGroup: course.taskGroup,
       semesterId: course.semesterId,

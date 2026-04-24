@@ -1,11 +1,10 @@
 import { Router } from 'express';
-import { PrismaClient } from '@prisma/client';
+import prisma from '../prisma.js';
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 import { v4 as uuidv4 } from 'uuid';
 
 const router = Router();
-const prisma = new PrismaClient();
 
 const JWT_SECRET = process.env.JWT_SECRET || 'labor-platform-secret-key-2026';
 const DEFAULT_PASSWORD = '123456';
@@ -130,6 +129,7 @@ router.post('/login', async (req, res) => {
           avatarEmoji: student.avatarEmoji,
           gradeId: student.gradeId,
           classCode: student.classCode,
+          role: student.role,
         },
       },
     });
@@ -181,6 +181,7 @@ router.get('/me', async (req, res) => {
         classCode: student.classCode,
         totalAchievements: student.totalAchievements,
         totalLikes: student.totalLikes,
+        role: student.role,
       },
     });
   } catch (error) {
