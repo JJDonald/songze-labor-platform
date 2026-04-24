@@ -6,6 +6,8 @@ import authRoutes from './routes/auth.js';
 import achievementRoutes from './routes/achievements.js';
 import courseRoutes from './routes/courses.js';
 import studentRoutes from './routes/students.js';
+import adminRoutes from './routes/admin.js';
+import uploadRoutes from './routes/upload.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -31,6 +33,8 @@ app.use('/api/auth', authRoutes);
 app.use('/api/achievements', achievementRoutes);
 app.use('/api/courses', courseRoutes);
 app.use('/api/students', studentRoutes);
+app.use('/api/admin', adminRoutes);
+app.use('/api/upload', uploadRoutes);
 
 app.use((err: any, req: express.Request, res: express.Response, next: express.NextFunction) => {
   console.error(err.stack);
@@ -46,4 +50,12 @@ app.listen(PORT, () => {
   console.log(`   POST /api/achievements`);
   console.log(`   GET  /api/courses`);
   console.log(`   GET  /api/students/:id/profile`);
+  console.log(`   👨‍💼 Admin endpoints (require admin auth):`);
+  console.log(`   GET/POST/PUT/DELETE /api/admin/users`);
+  console.log(`   GET/POST/PUT/DELETE /api/admin/courses`);
+  console.log(`   GET/PUT/DELETE /api/admin/achievements`);
+  console.log(`   GET  /api/admin/task-groups`);
+  console.log(`   GET  /api/admin/grades`);
+  console.log(`   GET  /api/admin/stats`);
+  console.log(`   POST /api/upload (image upload)`);
 });
