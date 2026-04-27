@@ -1,10 +1,9 @@
 import { Router } from 'express';
 import prisma from '../prisma.js';
 import jwt from 'jsonwebtoken';
+import { JWT_SECRET } from '../config.js';
 
 const router = Router();
-
-const JWT_SECRET = process.env.JWT_SECRET || 'labor-platform-secret-key-2026';
 
 const authMiddleware = async (req: any, res: any, next: any) => {
   try {

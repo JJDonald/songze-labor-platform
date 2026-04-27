@@ -3,10 +3,10 @@ import prisma from '../prisma.js';
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 import { v4 as uuidv4 } from 'uuid';
+import { JWT_SECRET } from '../config.js';
 
 const router = Router();
 
-const JWT_SECRET = process.env.JWT_SECRET || 'labor-platform-secret-key-2026';
 const DEFAULT_PASSWORD = '123456';
 
 router.post('/register', async (req, res) => {

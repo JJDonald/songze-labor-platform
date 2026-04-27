@@ -5,13 +5,12 @@ import multer from 'multer';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import { v4 as uuidv4 } from 'uuid';
+import { JWT_SECRET } from '../config.js';
 
 const router = Router();
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
-
-const JWT_SECRET = process.env.JWT_SECRET || 'labor-platform-secret-key-2026';
 
 const storage = multer.diskStorage({
   destination: path.join(__dirname, '../../uploads'),

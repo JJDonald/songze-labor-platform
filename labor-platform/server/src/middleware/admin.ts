@@ -1,8 +1,7 @@
 import { Request, Response, NextFunction } from 'express';
 import jwt from 'jsonwebtoken';
 import prisma from '../prisma.js';
-
-const JWT_SECRET = process.env.JWT_SECRET || 'labor-platform-secret-key-2026';
+import { JWT_SECRET } from '../config.js';
 
 export interface AuthRequest extends Request {
   user?: {
