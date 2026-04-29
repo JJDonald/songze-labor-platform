@@ -81,5 +81,5 @@ app.listen(PORT, () => {
   console.log(`   GET  /api/admin/task-groups`);
   console.log(`   GET  /api/admin/grades`);
   console.log(`   GET  /api/admin/stats`);
-  console.log(`   POST /api/upload (image upload)`);
+  console.log(`   POST /api/upload (media upload)`);
 });

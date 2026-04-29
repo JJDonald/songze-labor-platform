@@ -6,15 +6,15 @@
 
 ### 学生端
 - 📚 按年级/学期/任务群浏览劳动课程
-- 📝 查看课程详情（学习目标、材料清单、操作步骤、安全提示）
+- 📝 查看课程详情（演示视频/图片、学习目标、材料清单、操作步骤、安全提示）
 - ✍️ 提交劳动成果（文字描述 + 图片上传）
 - ❤️ 为同学成果点赞、互相评价
 - 📊 查看个人学习档案与成长轨迹
-- 🏆 查看成果展示墙（瀑布流瀑布瀑布浏览）
+- 🏆 查看成果展示墙（瀑布流浏览）
 
 ### 管理端
 - 👥 用户管理（添加/编辑/删除学生账户）
-- 📚 课程管理（创建/编辑/删除课程，支持封面图片上传）
+- 📚 课程管理（创建/编辑/删除课程，支持封面图片、演示视频和演示图片）
 - 🏆 成果管理（审核/公开/删除学生成果）
 - 📊 数据统计面板（用户/课程/成果/点赞数）
 
@@ -35,7 +35,7 @@ songze-labor-platform/
 ├── labor-platform/              # 前端（React SPA）
 │   ├── src/
 │   │   ├── features/            # 功能模块
-│   │   │   ├── admin/           # 管理后台（API、图片上传组件）
+│   │   │   ├── admin/           # 管理后台（API、媒体上传组件）
 │   │   │   ├── achievements/    # 成果展示
 │   │   │   ├── auth/            # 认证（登录/注册/状态管理）
 │   │   │   ├── courses/         # 课程学习
@@ -53,7 +53,7 @@ songze-labor-platform/
 │   │   ├── routes/              # API 路由
 │   │   │   ├── auth.ts          # 登录/注册/用户信息
 │   │   │   ├── admin.ts         # 管理 API（CRUD）
-│   │   │   ├── upload.ts        # 图片上传
+│   │   │   ├── upload.ts        # 图片/视频上传
 │   │   │   ├── courses.ts       # 课程查询
 │   │   │   ├── achievements.ts  # 成果管理
 │   │   │   └── students.ts      # 学生档案
@@ -68,9 +68,9 @@ songze-labor-platform/
 │   ├── uploads/                  # 上传文件目录
 │   └── package.json
 │
-├── deploy.sh                     # Debian 12 部署脚本
-├── nginx.conf                    # Nginx 反向代理配置
-├── ecosystem.config.js           # PM2 进程管理配置
+│   ├── deploy.sh                 # Debian 12 部署脚本
+│   ├── nginx.conf                # Nginx 反向代理配置
+│   ├── ecosystem.config.js       # PM2 进程管理配置
 └── README.md
 ```
 
@@ -106,14 +106,14 @@ npx tsx prisma/seed.ts      # 灌入测试数据
 npm run dev                 # 监听模式，http://localhost:3001
 
 # 4. 启动前端（终端 2）
-cd ../labor-platform
+cd ..
 npm install                 # 安装依赖
 npm run dev                 # 开发服务器，http://localhost:5173
 ```
 
 ### 测试账户
 
-| 角色 | 用户名 | 密码 | 权限 |
+| 角色 | 学籍号/账号 | 密码 | 权限 |
 |------|--------|------|------|
 | 👨‍💼 管理员 | `admin` | `admin123` | 完整管理权限 |
 | 👨‍🎓 学生 | `2024060101` | `123456` | 浏览课程、提交成果 |
@@ -168,7 +168,7 @@ sudo certbot --nginx -d yourdomain.com
 
 | 变量名 | 说明 | 默认值 | 生产必填 |
 |--------|------|--------|----------|
-| `DATABASE_URL` | SQLite 数据库路径 | `file:./prisma/dev.db` | 否 |
+| `DATABASE_URL` | SQLite 数据库路径 | `file:./dev.db` | 否 |
 | `JWT_SECRET` | JWT 签名密钥 | *(开发默认)* | **是** |
 | `PORT` | 后端服务端口 | `3001` | 否 |
 | `NODE_ENV` | 运行环境 | `development` | 设为 `production` |
@@ -219,7 +219,7 @@ VITE_API_URL=https://api.yourdomain.com/api npm run build
 | `GET/PUT/DELETE` | `/api/admin/achievements` | 成果管理 |
 | `GET` | `/api/admin/task-groups` | 任务群列表 |
 | `GET` | `/api/admin/grades` | 年级列表 |
-| `POST` | `/api/upload` | 图片上传 (multipart/form-data, field: `image`) |
+| `POST` | `/api/upload` | 图片/视频上传 (multipart/form-data, field: `file`) |
 
 ### 认证方式
 
@@ -241,9 +241,9 @@ Grade ───────┘                   │                │
 ## ⚠️ 注意事项
 
 1. **生产安全**: 部署前务必修改 `.env` 中的 `JWT_SECRET`，使用强随机字符串
-2. **数据库备份**: SQLite 是单文件数据库，定期备份 `server/prisma/dev.db`
+2. **数据库备份**: SQLite 是单文件数据库，定期备份 `server/dev.db`
 3. **上传目录**: `server/uploads/` 目录需要在 Nginx 中配置静态文件服务或通过后端代理
-4. **文件上传限制**: 单个文件最大 5MB，支持 jpg/png/gif/webp 格式
+4. **文件上传限制**: 单个文件最大 200MB，支持 jpg/png/gif/webp 图片和 mp4/webm/ogg 视频
 5. **权限控制**: admin 路由受 JWT + 角色双重验证，普通学生无法访问
 
 ## 📄 许可证
