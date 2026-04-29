@@ -48,7 +48,7 @@ router.post('/register', async (req, res) => {
 
     const token = jwt.sign(
       { studentId: student.id, studentIdNumber: student.studentId },
-      JWT_SECRET,
+      JWT_SECRET as string,
       { expiresIn: '7d' }
     );
 
@@ -64,6 +64,7 @@ router.post('/register', async (req, res) => {
           avatarEmoji: student.avatarEmoji,
           gradeId: student.gradeId,
           classCode: student.classCode,
+          role: student.role,
         },
       },
     });
@@ -113,7 +114,7 @@ router.post('/login', async (req, res) => {
 
     const token = jwt.sign(
       { studentId: student.id, studentIdNumber: student.studentId },
-      JWT_SECRET,
+      JWT_SECRET as string,
       { expiresIn: '7d' }
     );
 
@@ -155,7 +156,7 @@ router.get('/me', async (req, res) => {
     }
 
     const token = authHeader.substring(7);
-    const decoded = jwt.verify(token, JWT_SECRET) as { studentId: string };
+    const decoded = jwt.verify(token, JWT_SECRET as string) as unknown as { studentId: string };
 
     const student = await prisma.student.findUnique({
       where: { id: decoded.studentId },
@@ -206,7 +207,7 @@ router.post('/update-avatar', async (req, res) => {
     }
 
     const token = authHeader.substring(7);
-    const decoded = jwt.verify(token, JWT_SECRET) as { studentId: string };
+    const decoded = jwt.verify(token, JWT_SECRET as string) as unknown as { studentId: string };
 
     const { avatar } = req.body;
     if (!avatar) {
@@ -232,6 +233,7 @@ router.post('/update-avatar', async (req, res) => {
         avatarEmoji: student.avatarEmoji,
         gradeId: student.gradeId,
         classCode: student.classCode,
+        role: student.role,
       },
     });
   } catch (error) {
@@ -256,7 +258,7 @@ router.post('/change-password', async (req, res) => {
     }
 
     const token = authHeader.substring(7);
-    const decoded = jwt.verify(token, JWT_SECRET) as { studentId: string };
+    const decoded = jwt.verify(token, JWT_SECRET as string) as unknown as { studentId: string };
 
     const { oldPassword, newPassword } = req.body;
     if (!oldPassword || !newPassword) {

@@ -111,7 +111,8 @@ router.get('/:id/profile', authMiddleware, async (req: any, res) => {
       },
     };
 
-    const timeline = achievements.map((a) => ({
+    // 修复：显式声明类型为 any，解决 TS 严格模式报错
+    const timeline = achievements.map((a: any) => ({
       id: a.id,
       createdAt: a.createdAt,
       course: { title: '劳动项目', emoji: '📝' },
@@ -125,8 +126,9 @@ router.get('/:id/profile', authMiddleware, async (req: any, res) => {
       isLikedByMe: false,
     }));
 
-    const badgeStatus = allBadges.map((b) => {
-      const earned = badges.find((sb) => sb.badgeId === b.id);
+    // 修复：显式声明类型为 any
+    const badgeStatus = allBadges.map((b: any) => {
+      const earned = badges.find((sb: any) => sb.badgeId === b.id);
       return {
         id: b.id,
         name: b.name,
@@ -163,7 +165,8 @@ router.get('/my-achievements', authMiddleware, async (req: any, res) => {
       orderBy: { createdAt: 'desc' },
     });
 
-    const data = achievements.map((a) => ({
+    // 修复：显式声明类型为 any
+    const data = achievements.map((a: any) => ({
       id: a.id,
       title: a.title,
       description: a.description,

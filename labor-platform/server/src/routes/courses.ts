@@ -80,7 +80,7 @@ router.get('/', async (req, res) => {
       orderBy: [{ gradeId: 'asc' }, { semesterId: 'asc' }],
     });
 
-    const data = courses.map((c) => ({
+    const data = courses.map((c: any) => ({
       id: c.id,
       title: c.title,
       emoji: c.emoji,

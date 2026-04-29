@@ -23,7 +23,7 @@ export const authenticate = async (req: AuthRequest, res: Response, next: NextFu
     }
 
     const token = authHeader.substring(7);
-    const decoded = jwt.verify(token, JWT_SECRET) as { studentId: string; studentIdNumber: string };
+    const decoded = jwt.verify(token, JWT_SECRET!) as unknown as { studentId: string; studentIdNumber: string };
 
     const student = await prisma.student.findUnique({
       where: { id: decoded.studentId },

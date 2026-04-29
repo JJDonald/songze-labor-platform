@@ -118,10 +118,10 @@ router.get('/', async (req, res) => {
         },
         select: { achievementId: true },
       });
-      likedAchievementIds = likes.map((l) => l.achievementId);
+      likedAchievementIds = likes.map((l: { achievementId: string }) => l.achievementId);
     }
 
-    const data = achievements.map((a) => ({
+    const data = achievements.map((a: any) => ({
       id: a.id,
       student: a.student,
       course: a.courseTitle ? { title: a.courseTitle, taskGroupId: 'other' } : null,

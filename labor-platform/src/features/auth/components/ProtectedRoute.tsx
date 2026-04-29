@@ -9,9 +9,10 @@ interface ProtectedRouteProps {
 export const ProtectedRoute = ({ children, requireAdmin = false }: ProtectedRouteProps) => {
   const currentUser = useUserStore((state) => state.currentUser);
   const isAuthenticated = useUserStore((state) => state.isAuthenticated);
-  const hasHydrated = useUserStore.persist.hasHydrated?.() ?? true;
+  
+  // 修复：等待 Zustand persist 恢复完成。默认为 false，防止刷新页面时未恢复状态就进行判断
+  const hasHydrated = useUserStore.persist.hasHydrated?.();
 
-  // 等待 Zustand persist 恢复完成，防止刷新页面时误跳转
   if (!hasHydrated) {
     return <div className="min-h-screen flex items-center justify-center">加载中...</div>;
   }
@@ -25,4 +26,4 @@ export const ProtectedRoute = ({ children, requireAdmin = false }: ProtectedRout
   }
 
   return <>{children}</>;
-};
+}
