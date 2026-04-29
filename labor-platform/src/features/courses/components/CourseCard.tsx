@@ -1,5 +1,6 @@
 import type { Course } from '../types';
 import { cn } from '@/features/shared/lib';
+import { API_ORIGIN } from '@/lib/api';
 
 interface CourseCardProps {
   course: Course;
@@ -19,7 +20,13 @@ export const CourseCard = ({ course, onClick }: CourseCardProps) => {
         className="h-32 flex items-center justify-center text-6xl"
         style={{ backgroundColor: course.color }}
       >
-        {course.coverSvg ? (
+        {course.coverImage ? (
+          <img
+            src={`${API_ORIGIN}${course.coverImage}`}
+            alt={course.title}
+            className="w-full h-full object-cover"
+          />
+        ) : course.coverSvg ? (
           <div
             dangerouslySetInnerHTML={{ __html: course.coverSvg }}
             style={{ width: '100%', height: '100%' }}

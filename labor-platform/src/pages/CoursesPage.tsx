@@ -40,8 +40,8 @@ export const CoursesPage = () => {
         if (taskGroupsRes.code === 0 && taskGroupsRes.data) {
           setTaskGroups(taskGroupsRes.data);
         }
-      } catch (error) {
-        console.error('Failed to fetch filters:', error);
+      } catch {
+        console.error('Failed to fetch filters');
       }
     };
 

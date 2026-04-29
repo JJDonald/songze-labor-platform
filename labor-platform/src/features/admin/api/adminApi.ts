@@ -28,6 +28,8 @@ export interface AdminCourse {
   emoji: string;
   color: string;
   coverImage: string | null;
+  demoVideo: string | null;
+  demoImages: string | null;
   isActive: boolean;
   createdAt: string;
   grade?: { id: number; name: string };
@@ -96,6 +98,8 @@ export const adminApi = {
     emoji?: string;
     color?: string;
     coverImage?: string;
+    demoVideo?: string;
+    demoImages?: string;
   }) => api.post<AdminCourse>('/admin/courses', data),
   updateCourse: (id: string, data: Partial<{
     title: string;
@@ -110,6 +114,8 @@ export const adminApi = {
     emoji: string;
     color: string;
     coverImage: string;
+    demoVideo: string;
+    demoImages: string;
     isActive: boolean;
   }>) => api.put<AdminCourse>(`/admin/courses/${id}`, data),
   deleteCourse: (id: string) => api.delete<void>(`/admin/courses/${id}`),
@@ -126,4 +132,5 @@ export const adminApi = {
 
   // Upload
   uploadImage: (file: File) => api.upload<{ url: string; filename: string }>('/upload', file),
+  uploadFile: (file: File) => api.upload<{ url: string; filename: string }>('/upload', file),
 };

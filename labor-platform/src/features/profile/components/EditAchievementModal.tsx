@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useMemo, useState } from 'react';
 import { Modal, Button, Input } from '@/features/shared/components/ui';
 import type { Achievement } from '@/features/achievements/types';
 import { achievementsApi } from '@/features/achievements/api';
@@ -13,29 +13,29 @@ interface EditAchievementModalProps {
 }
 
 export const EditAchievementModal = ({ isOpen, achievement, onClose, onSuccess }: EditAchievementModalProps) => {
-  const [title, setTitle] = useState('');
-  const [description, setDescription] = useState('');
-  const [reflection, setReflection] = useState('');
-  const [images, setImages] = useState<string[]>([]);
-  const [isPublic, setIsPublic] = useState(true);
-  const [evalAttitude, setEvalAttitude] = useState(0);
-  const [evalSkill, setEvalSkill] = useState(0);
-  const [evalResult, setEvalResult] = useState(0);
+  const initialForm = useMemo(() => ({
+    title: achievement?.title ?? '',
+    description: achievement?.description ?? '',
+    reflection: '',
+    images: achievement?.images ?? [],
+    isPublic: true,
+    evalAttitude: achievement?.evalAttitude ?? 0,
+    evalSkill: achievement?.evalSkill ?? 0,
+    evalResult: achievement?.evalResult ?? 0,
+  }), [achievement]);
+
+  const [form, setForm] = useState(initialForm);
   const [isUpdating, setIsUpdating] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
 
-  useEffect(() => {
-    if (achievement) {
-      setTitle(achievement.title);
-      setDescription(achievement.description);
-      setReflection('');
-      setImages(achievement.images || []);
-      setIsPublic(true);
-      setEvalAttitude(achievement.evalAttitude);
-      setEvalSkill(achievement.evalSkill);
-      setEvalResult(achievement.evalResult);
-    }
-  }, [achievement]);
+  if (achievement && form.title !== initialForm.title) {
+    setForm(initialForm);
+  }
+
+  const { title, description, reflection, images, isPublic, evalAttitude, evalSkill, evalResult } = form;
+  const updateForm = <K extends keyof typeof form>(key: K, value: typeof form[K]) => {
+    setForm((current) => ({ ...current, [key]: value }));
+  };
 
   const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -43,12 +43,12 @@ export const EditAchievementModal = ({ isOpen, achievement, onClose, onSuccess }
     
     const url = await achievementsApi.uploadImage(file);
     if (url) {
-      setImages([...images, url]);
+      updateForm('images', [...images, url]);
     }
   };
 
   const handleRemoveImage = (index: number) => {
-    setImages(images.filter((_, i) => i !== index));
+    updateForm('images', images.filter((_, i) => i !== index));
   };
 
   const handleSave = async () => {
@@ -111,7 +111,7 @@ export const EditAchievementModal = ({ isOpen, achievement, onClose, onSuccess }
         <Input
           label="成果标题"
           value={title}
-          onChange={(e) => setTitle(e.target.value)}
+          onChange={(e) => updateForm('title', e.target.value)}
         />
         
         <div>
@@ -120,7 +120,7 @@ export const EditAchievementModal = ({ isOpen, achievement, onClose, onSuccess }
             className="w-full px-4 py-3 rounded-xl border-2 border-brand-sand bg-brand-cream font-body text-sm text-text outline-none transition-colors focus:border-brand-green focus:bg-white resize-none"
             rows={3}
             value={description}
-            onChange={(e) => setDescription(e.target.value)}
+            onChange={(e) => updateForm('description', e.target.value)}
           />
         </div>
 
@@ -131,7 +131,7 @@ export const EditAchievementModal = ({ isOpen, achievement, onClose, onSuccess }
             rows={2}
             placeholder="记录你的劳动感想..."
             value={reflection}
-            onChange={(e) => setReflection(e.target.value)}
+            onChange={(e) => updateForm('reflection', e.target.value)}
           />
         </div>
 
@@ -188,15 +188,15 @@ export const EditAchievementModal = ({ isOpen, achievement, onClose, onSuccess }
           <div className="space-y-3">
             <div className="flex items-center justify-between">
               <span className="text-sm">劳动态度</span>
-              {renderStars(evalAttitude, setEvalAttitude)}
+              {renderStars(evalAttitude, (value) => updateForm('evalAttitude', value))}
             </div>
             <div className="flex items-center justify-between">
               <span className="text-sm">劳动技能</span>
-              {renderStars(evalSkill, setEvalSkill)}
+              {renderStars(evalSkill, (value) => updateForm('evalSkill', value))}
             </div>
             <div className="flex items-center justify-between">
               <span className="text-sm">劳动成果</span>
-              {renderStars(evalResult, setEvalResult)}
+              {renderStars(evalResult, (value) => updateForm('evalResult', value))}
             </div>
           </div>
         </div>

@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { Modal, Button } from '@/features/shared/components/ui';
 import { cn } from '@/features/shared/lib';
 import { achievementsApi } from '@/features/achievements/api';
@@ -56,15 +56,9 @@ export const EvaluationModal = ({ isOpen, achievementId, onClose, onSuccess }: E
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [hasEvaluated, setHasEvaluated] = useState(false);
 
-  useEffect(() => {
-    if (isOpen && achievementId) {
-      fetchAchievement();
-    }
-  }, [isOpen, achievementId]);
-
-  const fetchAchievement = async () => {
+  const fetchAchievement = useCallback(async () => {
     if (!achievementId) return;
-    
+
     setIsLoading(true);
     const data = await achievementsApi.getById(achievementId);
     if (data) {
@@ -82,7 +76,14 @@ export const EvaluationModal = ({ isOpen, achievementId, onClose, onSuccess }: E
       }
     }
     setIsLoading(false);
-  };
+  }, [achievementId]);
+
+  useEffect(() => {
+    if (isOpen && achievementId) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
+      void fetchAchievement();
+    }
+  }, [isOpen, achievementId, fetchAchievement]);
 
   const handleSubmit = async () => {
     if (!achievementId || attitude === 0 || skill === 0 || result === 0) return;

@@ -1,5 +1,11 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { achievementsApi } from '../api';
+import type { Achievement } from '../types';
+
+interface AchievementList {
+  data: Achievement[];
+  total: number;
+}
 
 export const useLike = (achievementId: string) => {
   const queryClient = useQueryClient();
@@ -12,13 +18,13 @@ export const useLike = (achievementId: string) => {
     onMutate: async () => {
       await queryClient.cancelQueries({ queryKey: ['achievements'] });
 
-      const previousData = queryClient.getQueryData(['achievements']);
+      const previousData = queryClient.getQueryData<AchievementList>(['achievements']);
 
-      queryClient.setQueryData(['achievements'], (old: any) => {
+      queryClient.setQueryData<AchievementList>(['achievements'], (old) => {
         if (!old?.data) return old;
         return {
           ...old,
-          data: old.data.map((a: any) =>
+          data: old.data.map((a) =>
             a.id === achievementId
               ? {
                   ...a,
@@ -33,7 +39,7 @@ export const useLike = (achievementId: string) => {
       return { previousData };
     },
 
-    onError: (_err, _variables, context: any) => {
+    onError: (_err, _variables, context?: { previousData?: AchievementList }) => {
       queryClient.setQueryData(['achievements'], context?.previousData);
     },
 

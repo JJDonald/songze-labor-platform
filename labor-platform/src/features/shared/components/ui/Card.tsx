@@ -1,7 +1,7 @@
 import { cn } from '@/features/shared/lib';
 import type { HTMLAttributes } from 'react';
 
-interface CardProps extends HTMLAttributes<HTMLDivElement> {}
+type CardProps = HTMLAttributes<HTMLDivElement>;
 
 export const Card = ({ className, children, ...props }: CardProps) => {
   return (

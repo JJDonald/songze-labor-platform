@@ -53,7 +53,7 @@ export const PasswordModal = ({ isOpen, onClose }: PasswordModalProps) => {
       } else {
         setError(response.message);
       }
-    } catch (e) {
+    } catch {
       setError('修改失败，请检查网络');
     }
     

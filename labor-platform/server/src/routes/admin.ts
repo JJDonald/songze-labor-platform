@@ -204,7 +204,7 @@ router.post('/courses', async (req: AuthRequest, res) => {
   try {
     const {
       title, description, objectives, materials, steps, safetyTips,
-      gradeId, semesterId, taskGroupId, emoji, color, coverImage
+      gradeId, semesterId, taskGroupId, emoji, color, coverImage, demoVideo, demoImages
     } = req.body;
 
     if (!title || !description || !gradeId || !taskGroupId) {
@@ -230,6 +230,8 @@ router.post('/courses', async (req: AuthRequest, res) => {
         emoji: emoji || '🌱',
         color: color || '#E8F5E9',
         coverImage: coverImage || null,
+        demoVideo: demoVideo || null,
+        demoImages: typeof demoImages === 'string' ? demoImages : JSON.stringify(demoImages || []),
       },
     });
 
@@ -254,7 +256,7 @@ router.put('/courses/:id', async (req: AuthRequest, res) => {
     const { id } = req.params;
     const {
       title, description, objectives, materials, steps, safetyTips,
-      gradeId, semesterId, taskGroupId, emoji, color, coverImage, isActive
+      gradeId, semesterId, taskGroupId, emoji, color, coverImage, demoVideo, demoImages, isActive
     } = req.body;
 
     const updateData: any = {};
@@ -270,6 +272,8 @@ router.put('/courses/:id', async (req: AuthRequest, res) => {
     if (emoji) updateData.emoji = emoji;
     if (color) updateData.color = color;
     if (coverImage !== undefined) updateData.coverImage = coverImage;
+    if (demoVideo !== undefined) updateData.demoVideo = demoVideo;
+    if (demoImages !== undefined) updateData.demoImages = typeof demoImages === 'string' ? demoImages : JSON.stringify(demoImages);
     if (isActive !== undefined) updateData.isActive = isActive;
 
     const course = await prisma.course.update({

@@ -117,19 +117,32 @@ const hashedPassword = await bcrypt.hash('123456', 10);
     ];
 
     for (const a of achievements) {
-      await prisma.achievement.create({
-        data: {
-          id: uuidv4(),
+      const existing = await prisma.achievement.findFirst({
+        where: {
           studentId: student1.id,
-          images: '["🍞"]',
-          ...a,
+          title: a.title,
         },
       });
+
+      if (!existing) {
+        await prisma.achievement.create({
+          data: {
+            id: uuidv4(),
+            studentId: student1.id,
+            images: '["🍞"]',
+            ...a,
+          },
+        });
+      }
     }
+
+    const totalAchievements = await prisma.achievement.count({
+      where: { studentId: student1.id },
+    });
 
     await prisma.student.update({
       where: { id: student1.id },
-      data: { totalAchievements: 2 },
+      data: { totalAchievements },
     });
   }
 

@@ -39,7 +39,7 @@ export const AvatarModal = ({ isOpen, onClose }: AvatarModalProps) => {
       } else {
         setError('保存失败，请重试');
       }
-    } catch (e) {
+    } catch {
       setError('网络错误，请重试');
     } finally {
       setIsUpdating(false);

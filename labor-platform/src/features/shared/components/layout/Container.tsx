@@ -1,7 +1,7 @@
 import { cn } from '@/features/shared/lib';
 import type { HTMLAttributes } from 'react';
 
-interface ContainerProps extends HTMLAttributes<HTMLDivElement> {}
+type ContainerProps = HTMLAttributes<HTMLDivElement>;
 
 export const Container = ({ className, children, ...props }: ContainerProps) => {
   return (

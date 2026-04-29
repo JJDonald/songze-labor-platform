@@ -3,6 +3,7 @@ import type { Course } from '../types';
 import { cn } from '@/features/shared/lib';
 import { Button } from '@/features/shared/components/ui';
 import { Modal } from '@/features/shared/components/ui';
+import { API_ORIGIN } from '@/lib/api';
 
 interface CourseDetailProps {
   course: Course;
@@ -27,7 +28,13 @@ export const CourseDetail = ({ course, isOpen, onClose }: CourseDetailProps) => 
           className="h-48 flex items-center justify-center text-8xl rounded-t-2xl"
           style={{ backgroundColor: course.color }}
         >
-          {course.coverSvg ? (
+          {course.coverImage ? (
+            <img
+              src={`${API_ORIGIN}${course.coverImage}`}
+              alt={course.title}
+              className="w-full h-full object-cover"
+            />
+          ) : course.coverSvg ? (
             <div
               dangerouslySetInnerHTML={{ __html: course.coverSvg }}
               style={{ width: '100%', height: '100%' }}
@@ -49,6 +56,33 @@ export const CourseDetail = ({ course, isOpen, onClose }: CourseDetailProps) => 
 
           <h2 className="font-display text-2xl mb-2">{course.title}</h2>
           <p className="text-text-muted text-sm mb-4">{course.description}</p>
+
+          {(course.demoVideo || (course.demoImages && course.demoImages.length > 0)) && (
+            <div className="mb-6">
+              <h3 className="font-semibold text-sm mb-3 flex items-center gap-1.5">
+                <span className="text-lg">🎬</span> 演示视频与图片
+              </h3>
+              {course.demoVideo && (
+                <video
+                  src={course.demoVideo.startsWith('http') ? course.demoVideo : `${API_ORIGIN}${course.demoVideo}`}
+                  controls
+                  className="w-full rounded-xl bg-black mb-3"
+                />
+              )}
+              {course.demoImages && course.demoImages.length > 0 && (
+                <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+                  {course.demoImages.map((image, index) => (
+                    <img
+                      key={`${image}-${index}`}
+                      src={image.startsWith('http') ? image : `${API_ORIGIN}${image}`}
+                      alt={`${course.title} 演示图片 ${index + 1}`}
+                      className="w-full h-28 object-cover rounded-lg border border-gray-100"
+                    />
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
 
           <div className="bg-brand-cream/50 rounded-xl p-4 mb-6">
             <h3 className="font-semibold text-sm mb-2 flex items-center gap-1.5">

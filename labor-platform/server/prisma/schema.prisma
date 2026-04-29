@@ -52,6 +52,8 @@ model Course {
   
   coverSvg    String?
   coverImage  String?  // 上传的封面图片路径
+  demoVideo   String?  // 演示视频 URL 或上传路径
+  demoImages  String?  // 演示图片路径 JSON 数组
   
   isActive    Boolean  @default(true)
   createdAt   DateTime @default(now())

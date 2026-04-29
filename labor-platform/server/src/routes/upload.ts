@@ -32,10 +32,18 @@ const storage = multer.diskStorage({
 const upload = multer({
   storage,
   limits: {
-    fileSize: 5 * 1024 * 1024, // 限制 5MB
+    fileSize: 200 * 1024 * 1024, // 限制 200MB，支持课程演示视频
   },
   fileFilter: (req, file, cb) => {
-    const allowedTypes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'];
+    const allowedTypes = [
+      'image/jpeg',
+      'image/png',
+      'image/gif',
+      'image/webp',
+      'video/mp4',
+      'video/webm',
+      'video/ogg',
+    ];
     if (allowedTypes.includes(file.mimetype)) {
       cb(null, true);
     } else {
@@ -44,15 +52,15 @@ const upload = multer({
   },
 });
 
-// 上传图片（需要管理员权限）— 手动调用 multer 以捕获错误
-router.post('/', authenticate, requireAdmin, (req: AuthRequest, res, next) => {
-  upload.single('image')(req, res, (err) => {
+// 上传媒体文件（需要管理员权限）— 手动调用 multer 以捕获错误
+router.post('/', authenticate, requireAdmin, (req: AuthRequest, res) => {
+  upload.single('file')(req, res, (err) => {
     if (err) {
       // Multer 错误（文件过大、类型不支持等）
       const message = err.message || '上传失败';
       return res.status(400).json({
         code: 400,
-        message: message.includes('File too large') ? '文件大小不能超过 5MB' : message,
+        message: message.includes('File too large') ? '文件大小不能超过 200MB' : message,
         data: null,
       });
     }
@@ -60,7 +68,7 @@ router.post('/', authenticate, requireAdmin, (req: AuthRequest, res, next) => {
     if (!req.file) {
       return res.status(400).json({
         code: 400,
-        message: '请选择要上传的图片',
+        message: '请选择要上传的文件',
         data: null,
       });
     }

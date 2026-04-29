@@ -13,6 +13,9 @@ export interface Course {
   }[];
   safetyTips: string;
   coverSvg?: string;
+  coverImage?: string | null;
+  demoVideo?: string | null;
+  demoImages?: string[];
   grade: {
     id: number;
     name: string;

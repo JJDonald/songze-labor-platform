@@ -66,14 +66,14 @@ class ApiClient {
     return this.request<T>(endpoint, { method: 'GET' });
   }
 
-  async post<T>(endpoint: string, body?: any): Promise<ApiResponse<T>> {
+  async post<T>(endpoint: string, body?: unknown): Promise<ApiResponse<T>> {
     return this.request<T>(endpoint, {
       method: 'POST',
       body: body ? JSON.stringify(body) : undefined,
     });
   }
 
-  async put<T>(endpoint: string, body?: any): Promise<ApiResponse<T>> {
+  async put<T>(endpoint: string, body?: unknown): Promise<ApiResponse<T>> {
     return this.request<T>(endpoint, {
       method: 'PUT',
       body: body ? JSON.stringify(body) : undefined,
@@ -87,7 +87,7 @@ class ApiClient {
   async upload<T>(endpoint: string, file: File): Promise<ApiResponse<T>> {
     const token = this.getToken();
     const formData = new FormData();
-    formData.append('image', file);
+    formData.append('file', file);
 
     const response = await fetch(`${API_BASE}${endpoint}`, {
       method: 'POST',

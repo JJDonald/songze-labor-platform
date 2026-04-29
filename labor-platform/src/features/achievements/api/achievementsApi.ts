@@ -34,6 +34,32 @@ interface WallResponse {
   total: number;
 }
 
+interface AchievementDetail {
+  id: string;
+  student: Achievement['student'];
+  course: Achievement['course'] | null;
+  title: string;
+  description: string;
+  reflection?: string;
+  images: string[];
+  evalAttitude: number;
+  evalSkill: number;
+  evalResult: number;
+  avgAttitude: number;
+  avgSkill: number;
+  avgResult: number;
+  evalCount: number;
+  likesCount: number;
+  createdAt: string;
+  isLikedByMe: boolean;
+  myEvaluation?: {
+    attitude: number;
+    skill: number;
+    result: number;
+  } | null;
+  isOwner: boolean;
+}
+
 export const achievementsApi = {
   getWall: async (params: AchievementFilters): Promise<{ data: Achievement[]; total: number }> => {
     const queryParams = new URLSearchParams();
@@ -120,8 +146,8 @@ export const achievementsApi = {
     return response.code === 0;
   },
 
-  getById: async (id: string): Promise<any | null> => {
-    const response = await api.get<any>(`/achievements/${id}`);
+  getById: async (id: string): Promise<AchievementDetail | null> => {
+    const response = await api.get<AchievementDetail>(`/achievements/${id}`);
     if (response.code === 0 && response.data) {
       return response.data;
     }

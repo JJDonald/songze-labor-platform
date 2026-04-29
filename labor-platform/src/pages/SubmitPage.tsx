@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button, Input, Container } from '@/features/shared';
 import { useUserStore } from '@/features/auth';
@@ -45,20 +45,21 @@ export const SubmitPage = () => {
   const [submitSuccess, setSubmitSuccess] = useState(false);
   const [courses, setCourses] = useState<Course[]>([]);
 
-  useEffect(() => {
-    fetchCourses();
-  }, []);
-
-  const fetchCourses = async () => {
+  const fetchCourses = useCallback(async () => {
     try {
       const response = await api.get<Course[]>('/courses');
       if (response.code === 0 && response.data) {
         setCourses(response.data);
       }
-    } catch (e) {
+    } catch {
       console.error('Failed to fetch courses');
     }
-  };
+  }, []);
+
+  useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    void fetchCourses();
+  }, [fetchCourses]);
 
   if (!currentUser) {
     return (

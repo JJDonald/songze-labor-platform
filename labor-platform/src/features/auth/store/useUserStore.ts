@@ -61,7 +61,7 @@ export const useUserStore = create<UserState>()(
             set({ error: response.message, isLoading: false });
             return false;
           }
-        } catch (error) {
+        } catch {
           set({ error: '注册失败，请检查网络连接', isLoading: false });
           return false;
         }
@@ -88,7 +88,7 @@ export const useUserStore = create<UserState>()(
             set({ error: response.message, isLoading: false });
             return false;
           }
-        } catch (error) {
+        } catch {
           set({ error: '登录失败，请检查网络连接', isLoading: false });
           return false;
         }
@@ -105,7 +105,7 @@ export const useUserStore = create<UserState>()(
           if (response.code === 0 && response.data) {
             set({ currentUser: response.data, isAuthenticated: true });
           }
-        } catch (error) {
+        } catch {
           set({ currentUser: null, isAuthenticated: false, token: null });
           api.clearAuthToken();
         }
@@ -127,7 +127,7 @@ export const useUserStore = create<UserState>()(
           // 如果失败，回滚
           set({ currentUser });
           return false;
-        } catch (error) {
+        } catch {
           // 如果失败，回滚
           set({ currentUser });
           return false;

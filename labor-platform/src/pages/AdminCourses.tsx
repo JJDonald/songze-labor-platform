@@ -3,6 +3,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { adminApi } from '@/features/admin/api/adminApi';
 import type { AdminCourse } from '@/features/admin/api/adminApi';
 import { ImageUploader } from '@/features/admin/components/ImageUploader';
+import { FileUploader } from '@/features/admin/components/FileUploader';
 import { API_ORIGIN } from '@/lib/api';
 
 export const AdminCourses = () => {
@@ -23,6 +24,8 @@ export const AdminCourses = () => {
     emoji: '🌱',
     color: '#E8F5E9',
     coverImage: '',
+    demoVideo: '',
+    demoImages: [] as string[],
   });
 
   const { data: coursesData, isLoading: coursesLoading } = useQuery({
@@ -83,6 +86,8 @@ export const AdminCourses = () => {
       emoji: '🌱',
       color: '#E8F5E9',
       coverImage: '',
+      demoVideo: '',
+      demoImages: [],
     });
     setShowModal(true);
   };
@@ -92,15 +97,18 @@ export const AdminCourses = () => {
     let objectives: string[] = [];
     let materials: string[] = [];
     let steps: { title: string; desc: string; icon: string }[] = [];
+    let demoImages: string[] = [];
     
     try {
       objectives = JSON.parse(course.objectives);
       materials = JSON.parse(course.materials);
       steps = JSON.parse(course.steps);
+      demoImages = course.demoImages ? JSON.parse(course.demoImages) : [];
     } catch {
       objectives = [];
       materials = [];
       steps = [];
+      demoImages = [];
     }
 
     setFormData({
@@ -116,6 +124,8 @@ export const AdminCourses = () => {
       emoji: course.emoji,
       color: course.color,
       coverImage: course.coverImage || '',
+      demoVideo: course.demoVideo || '',
+      demoImages,
     });
     setShowModal(true);
   };
@@ -141,6 +151,8 @@ export const AdminCourses = () => {
       emoji: formData.emoji,
       color: formData.color,
       coverImage: formData.coverImage || undefined,
+      demoVideo: formData.demoVideo || undefined,
+      demoImages: JSON.stringify(formData.demoImages),
     };
 
     if (editingCourse) {
@@ -164,6 +176,7 @@ export const AdminCourses = () => {
   
   const addStep = () => setFormData({ ...formData, steps: [...formData.steps, { title: '', desc: '', icon: '📝' }] });
   const removeStep = (index: number) => setFormData({ ...formData, steps: formData.steps.filter((_, i) => i !== index) });
+  const removeDemoImage = (index: number) => setFormData({ ...formData, demoImages: formData.demoImages.filter((_, i) => i !== index) });
 
   if (coursesLoading) {
     return <div className="min-h-screen bg-brand-cream p-6">加载中...</div>;
@@ -326,6 +339,51 @@ export const AdminCourses = () => {
                     value={formData.coverImage ? `${API_ORIGIN}${formData.coverImage}` : undefined}
                     onChange={(url) => setFormData({ ...formData, coverImage: url })}
                   />
+                </div>
+
+                {/* 演示视频与图片 */}
+                <div className="border rounded-lg p-4 bg-gray-50">
+                  <label className="block text-sm font-medium mb-2">演示视频</label>
+                  <FileUploader
+                    accept="video/mp4,video/webm,video/ogg"
+                    label="上传演示视频"
+                    preview={formData.demoVideo}
+                    onChange={(url) => setFormData({ ...formData, demoVideo: url })}
+                  />
+                  <input
+                    type="url"
+                    value={formData.demoVideo}
+                    onChange={(e) => setFormData({ ...formData, demoVideo: e.target.value })}
+                    className="w-full border rounded-lg px-3 py-2 mt-2"
+                    placeholder="也可以直接粘贴视频 URL"
+                  />
+
+                  <label className="block text-sm font-medium mt-4 mb-2">演示图片</label>
+                  <FileUploader
+                    accept="image/jpeg,image/png,image/gif,image/webp"
+                    label="上传演示图片"
+                    onChange={(url) => setFormData({ ...formData, demoImages: [...formData.demoImages, url] })}
+                  />
+                  {formData.demoImages.length > 0 && (
+                    <div className="grid grid-cols-3 gap-3 mt-3">
+                      {formData.demoImages.map((image, i) => (
+                        <div key={`${image}-${i}`} className="relative">
+                          <img
+                            src={image.startsWith('http') ? image : `${API_ORIGIN}${image}`}
+                            alt={`演示图片 ${i + 1}`}
+                            className="w-full h-24 object-cover rounded border"
+                          />
+                          <button
+                            type="button"
+                            onClick={() => removeDemoImage(i)}
+                            className="absolute top-1 right-1 bg-black/60 text-white text-xs px-2 py-1 rounded"
+                          >
+                            删除
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+                  )}
                 </div>
 
                 {/* 学习目标 */}

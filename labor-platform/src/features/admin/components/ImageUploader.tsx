@@ -34,8 +34,8 @@ export const ImageUploader = ({ value, onChange, className = '' }: ImageUploader
         onChange(response.data.url);
         setPreview(imageUrl);
       }
-    } catch (error) {
-      console.error('Upload failed:', error);
+    } catch {
+      console.error('Upload failed');
       alert('上传失败，请重试');
     } finally {
       setUploading(false);
