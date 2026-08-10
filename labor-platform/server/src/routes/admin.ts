@@ -3,6 +3,7 @@ import prisma from '../prisma.js';
 import bcrypt from 'bcryptjs';
 import { v4 as uuidv4 } from 'uuid';
 import { authenticate, requireAdmin, AuthRequest } from '../middleware/admin.js';
+import { DEFAULT_EVALUATION_DIMENSIONS, ensureEvaluationDimensions } from '../services/evaluationDimensions.js';
 
 const router = Router();
 
@@ -483,6 +484,161 @@ router.get('/stats', async (req: AuthRequest, res) => {
     res.status(500).json({
       code: 500,
       message: '获取统计信息失败',
+      data: null,
+    });
+  }
+});
+
+// ==================== 评价维度配置 ====================
+
+router.get('/evaluation-dimensions', async (req: AuthRequest, res) => {
+  try {
+    const dimensions = await ensureEvaluationDimensions();
+
+    res.json({
+      code: 0,
+      message: 'success',
+      data: dimensions,
+    });
+  } catch (error) {
+    console.error('Get evaluation dimensions error:', error);
+    res.status(500).json({
+      code: 500,
+      message: '获取评价维度失败',
+      data: null,
+    });
+  }
+});
+
+router.put('/evaluation-dimensions', async (req: AuthRequest, res) => {
+  try {
+    const { dimensions } = req.body as {
+      dimensions?: Array<{
+        key?: string;
+        label?: string;
+        description?: string;
+        prompt?: string;
+        weight?: number;
+        sortOrder?: number;
+        isEnabled?: boolean;
+      }>;
+    };
+
+    if (!Array.isArray(dimensions) || dimensions.length === 0) {
+      return res.status(400).json({
+        code: 400,
+        message: '请提交评价维度配置',
+        data: null,
+      });
+    }
+
+    const allowedKeys = DEFAULT_EVALUATION_DIMENSIONS.map((dimension) => dimension.key);
+    const incomingKeys = dimensions.map((dimension) => dimension.key);
+    const hasAllRequiredKeys = allowedKeys.every((key) => incomingKeys.includes(key));
+
+    if (!hasAllRequiredKeys) {
+      return res.status(400).json({
+        code: 400,
+        message: '评价维度必须包含态度、技能、成果三项',
+        data: null,
+      });
+    }
+
+    for (const dimension of dimensions) {
+      const defaultDimension = DEFAULT_EVALUATION_DIMENSIONS.find((item) => item.key === dimension.key);
+      if (!defaultDimension) {
+        return res.status(400).json({
+          code: 400,
+          message: `不支持的评价维度：${dimension.key || '未知'}`,
+          data: null,
+        });
+      }
+
+      if (!dimension.label?.trim() || !dimension.description?.trim() || !dimension.prompt?.trim()) {
+        return res.status(400).json({
+          code: 400,
+          message: '维度名称、说明和 AI 提示词不能为空',
+          data: null,
+        });
+      }
+
+      const normalizedWeight = Number(dimension.weight);
+      if (!Number.isFinite(normalizedWeight) || normalizedWeight <= 0) {
+        return res.status(400).json({
+          code: 400,
+          message: '维度权重必须是大于 0 的数字',
+          data: null,
+        });
+      }
+    }
+
+    await Promise.all(
+      dimensions.map((dimension) => {
+        const defaultDimension = DEFAULT_EVALUATION_DIMENSIONS.find((item) => item.key === dimension.key)!;
+        return prisma.evaluationDimension.upsert({
+          where: { key: defaultDimension.key },
+          update: {
+            label: dimension.label!.trim(),
+            description: dimension.description!.trim(),
+            prompt: dimension.prompt!.trim(),
+            weight: Number(dimension.weight),
+            sortOrder: Number.isFinite(Number(dimension.sortOrder)) ? Number(dimension.sortOrder) : defaultDimension.sortOrder,
+            isEnabled: dimension.isEnabled !== false,
+          },
+          create: {
+            key: defaultDimension.key,
+            label: dimension.label!.trim(),
+            description: dimension.description!.trim(),
+            prompt: dimension.prompt!.trim(),
+            weight: Number(dimension.weight),
+            sortOrder: Number.isFinite(Number(dimension.sortOrder)) ? Number(dimension.sortOrder) : defaultDimension.sortOrder,
+            isEnabled: dimension.isEnabled !== false,
+          },
+        });
+      })
+    );
+
+    const updated = await ensureEvaluationDimensions();
+
+    res.json({
+      code: 0,
+      message: '评价维度已更新',
+      data: updated,
+    });
+  } catch (error) {
+    console.error('Update evaluation dimensions error:', error);
+    res.status(500).json({
+      code: 500,
+      message: '更新评价维度失败',
+      data: null,
+    });
+  }
+});
+
+router.post('/evaluation-dimensions/reset', async (req: AuthRequest, res) => {
+  try {
+    await Promise.all(
+      DEFAULT_EVALUATION_DIMENSIONS.map((dimension) =>
+        prisma.evaluationDimension.upsert({
+          where: { key: dimension.key },
+          update: dimension,
+          create: dimension,
+        })
+      )
+    );
+
+    const dimensions = await ensureEvaluationDimensions();
+
+    res.json({
+      code: 0,
+      message: '已恢复默认评价维度',
+      data: dimensions,
+    });
+  } catch (error) {
+    console.error('Reset evaluation dimensions error:', error);
+    res.status(500).json({
+      code: 500,
+      message: '恢复默认评价维度失败',
       data: null,
     });
   }

@@ -7,3 +7,4 @@ export { AdminDashboard } from './AdminDashboard';
 export { AdminUsers } from './AdminUsers';
 export { AdminCourses } from './AdminCourses';
 export { AdminAchievements } from './AdminAchievements';
+export { AdminEvaluationDimensions } from './AdminEvaluationDimensions';

@@ -29,6 +29,7 @@ export const AdminDashboard = () => {
     { label: '用户管理', path: '/admin/users', icon: '👥', desc: '添加、编辑、删除用户账户' },
     { label: '课程管理', path: '/admin/courses', icon: '📚', desc: '管理课程内容和封面图片' },
     { label: '成果管理', path: '/admin/achievements', icon: '🏆', desc: '审核和删除学生成果' },
+    { label: '评价维度', path: '/admin/evaluation-dimensions', icon: '🤖', desc: '配置 AI 智能体评价标准' },
   ];
 
   return (
@@ -50,7 +51,7 @@ export const AdminDashboard = () => {
         {/* Quick Links */}
         <div className="bg-white rounded-xl shadow-sm p-6">
           <h2 className="text-xl font-bold mb-4">快捷入口</h2>
-          <div className="grid md:grid-cols-3 gap-4">
+          <div className="grid md:grid-cols-4 gap-4">
             {quickLinks.map((link) => (
               <Link
                 key={link.path}

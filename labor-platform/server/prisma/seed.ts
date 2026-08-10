@@ -1,6 +1,7 @@
 import { PrismaClient } from '@prisma/client';
 import bcrypt from 'bcryptjs';
 import { v4 as uuidv4 } from 'uuid';
+import { DEFAULT_EVALUATION_DIMENSIONS } from '../src/services/evaluationDimensions.js';
 
 const prisma = new PrismaClient();
 
@@ -146,7 +147,17 @@ const hashedPassword = await bcrypt.hash('123456', 10);
     });
   }
 
-  // 6. 创建课程
+  // 6. 创建评价维度配置
+  console.log('创建评价维度配置...');
+  for (const dimension of DEFAULT_EVALUATION_DIMENSIONS) {
+    await prisma.evaluationDimension.upsert({
+      where: { key: dimension.key },
+      update: dimension,
+      create: dimension,
+    });
+  }
+
+  // 7. 创建课程
   await seedCourses();
 
   console.log('✅ 数据库初始化完成！');

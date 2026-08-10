@@ -71,6 +71,19 @@ export interface AdminStats {
   totalLikes: number;
 }
 
+export interface EvaluationDimension {
+  id: string;
+  key: 'attitude' | 'skill' | 'result';
+  label: string;
+  description: string;
+  prompt: string;
+  weight: number;
+  sortOrder: number;
+  isEnabled: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
+
 export const adminApi = {
   // Stats
   getStats: () => api.get<AdminStats>('/admin/stats'),
@@ -129,6 +142,12 @@ export const adminApi = {
   // Reference data
   getTaskGroups: () => api.get<TaskGroup[]>('/admin/task-groups'),
   getGrades: () => api.get<Grade[]>('/admin/grades'),
+
+  // Evaluation dimensions
+  getEvaluationDimensions: () => api.get<EvaluationDimension[]>('/admin/evaluation-dimensions'),
+  updateEvaluationDimensions: (dimensions: EvaluationDimension[]) =>
+    api.put<EvaluationDimension[]>('/admin/evaluation-dimensions', { dimensions }),
+  resetEvaluationDimensions: () => api.post<EvaluationDimension[]>('/admin/evaluation-dimensions/reset'),
 
   // Upload
   uploadImage: (file: File) => api.upload<{ url: string; filename: string }>('/upload', file),

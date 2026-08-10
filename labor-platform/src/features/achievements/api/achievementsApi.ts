@@ -58,6 +58,33 @@ interface AchievementDetail {
     result: number;
   } | null;
   isOwner: boolean;
+  evaluationDimensions?: EvaluationDimension[];
+}
+
+export interface EvaluationDimension {
+  id: string;
+  key: 'attitude' | 'skill' | 'result';
+  label: string;
+  description: string;
+  prompt: string;
+  weight: number;
+  sortOrder: number;
+  isEnabled: boolean;
+}
+
+export interface AiEvaluationResult {
+  scores: {
+    attitude: number;
+    skill: number;
+    result: number;
+  };
+  summary: string;
+  suggestions: string[];
+  source: 'agent' | 'local';
+  avgAttitude: number;
+  avgSkill: number;
+  avgResult: number;
+  evalCount: number;
 }
 
 export const achievementsApi = {
@@ -157,5 +184,13 @@ export const achievementsApi = {
   evaluate: async (id: string, attitude: number, skill: number, result: number): Promise<boolean> => {
     const response = await api.post(`/achievements/${id}/evaluate`, { attitude, skill, result });
     return response.code === 0;
+  },
+
+  aiEvaluate: async (id: string): Promise<AiEvaluationResult | null> => {
+    const response = await api.post<AiEvaluationResult>(`/achievements/${id}/ai-evaluate`);
+    if (response.code === 0 && response.data) {
+      return response.data;
+    }
+    return null;
   },
 };

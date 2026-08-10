@@ -1,4 +1,4 @@
-import { HomePage, AchievementsPage, ProfilePage, SubmitPage, CoursesPage, AdminDashboard, AdminUsers, AdminCourses, AdminAchievements } from '@/pages';
+import { HomePage, AchievementsPage, ProfilePage, SubmitPage, CoursesPage, AdminDashboard, AdminUsers, AdminCourses, AdminAchievements, AdminEvaluationDimensions } from '@/pages';
 import { ProtectedRoute } from '@/features/auth/components/ProtectedRoute';
 
 export const routes = [
@@ -11,4 +11,5 @@ export const routes = [
   { path: '/admin/users', element: <ProtectedRoute requireAdmin><AdminUsers /></ProtectedRoute> },
   { path: '/admin/courses', element: <ProtectedRoute requireAdmin><AdminCourses /></ProtectedRoute> },
   { path: '/admin/achievements', element: <ProtectedRoute requireAdmin><AdminAchievements /></ProtectedRoute> },
+  { path: '/admin/evaluation-dimensions', element: <ProtectedRoute requireAdmin><AdminEvaluationDimensions /></ProtectedRoute> },
 ];

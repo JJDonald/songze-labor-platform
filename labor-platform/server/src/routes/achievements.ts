@@ -6,8 +6,42 @@ import path from 'path';
 import { fileURLToPath } from 'url';
 import { v4 as uuidv4 } from 'uuid';
 import { JWT_SECRET } from '../config.js';
+import { enabledEvaluationDimensions, normalizeScore } from '../services/evaluationDimensions.js';
+import { evaluateAchievementWithAgent } from '../services/aiEvaluation.js';
 
 const router = Router();
+
+const recalculateEvaluationAverages = async (achievementId: string) => {
+  const evaluations = await prisma.evaluation.findMany({
+    where: { achievementId },
+  });
+
+  if (evaluations.length === 0) {
+    return prisma.achievement.update({
+      where: { id: achievementId },
+      data: {
+        avgAttitude: 0,
+        avgSkill: 0,
+        avgResult: 0,
+        evalCount: 0,
+      },
+    });
+  }
+
+  const avgAttitude = evaluations.reduce((sum, e) => sum + e.attitude, 0) / evaluations.length;
+  const avgSkill = evaluations.reduce((sum, e) => sum + e.skill, 0) / evaluations.length;
+  const avgResult = evaluations.reduce((sum, e) => sum + e.result, 0) / evaluations.length;
+
+  return prisma.achievement.update({
+    where: { id: achievementId },
+    data: {
+      avgAttitude,
+      avgSkill,
+      avgResult,
+      evalCount: evaluations.length,
+    },
+  });
+};
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -106,7 +140,9 @@ router.get('/', async (req, res) => {
         const token = authHeader.substring(7);
         const decoded = jwt.verify(token, JWT_SECRET) as { studentId: string };
         currentStudentId = decoded.studentId;
-      } catch (e) {}
+      } catch (error) {
+        currentStudentId = null;
+      }
     }
 
     let likedAchievementIds: string[] = [];
@@ -440,7 +476,9 @@ router.get('/:id', async (req, res) => {
             },
           },
         });
-      } catch (e) {}
+      } catch (error) {
+        currentStudentId = null;
+      }
     }
 
     // 检查是否点赞
@@ -484,6 +522,7 @@ router.get('/:id', async (req, res) => {
           result: myEvaluation.result,
         } : null,
         isOwner: currentStudentId === achievement.studentId,
+        evaluationDimensions: await enabledEvaluationDimensions(),
       },
     });
   } catch (error) {
@@ -569,33 +608,16 @@ router.post('/:id/evaluate', authMiddleware, async (req: any, res) => {
       });
     }
 
-    // 重新计算平均分
-    const evaluations = await prisma.evaluation.findMany({
-      where: { achievementId: id },
-    });
-
-    const avgAttitude = evaluations.reduce((sum, e) => sum + e.attitude, 0) / evaluations.length;
-    const avgSkill = evaluations.reduce((sum, e) => sum + e.skill, 0) / evaluations.length;
-    const avgResult = evaluations.reduce((sum, e) => sum + e.result, 0) / evaluations.length;
-
-    await prisma.achievement.update({
-      where: { id },
-      data: {
-        avgAttitude,
-        avgSkill,
-        avgResult,
-        evalCount: evaluations.length,
-      },
-    });
+    const updatedAchievement = await recalculateEvaluationAverages(id);
 
     res.json({
       code: 0,
       message: existingEvaluation ? '评价已更新' : '评价成功',
       data: {
-        avgAttitude,
-        avgSkill,
-        avgResult,
-        evalCount: evaluations.length,
+        avgAttitude: updatedAchievement.avgAttitude,
+        avgSkill: updatedAchievement.avgSkill,
+        avgResult: updatedAchievement.avgResult,
+        evalCount: updatedAchievement.evalCount,
       },
     });
   } catch (error) {
@@ -603,6 +625,98 @@ router.post('/:id/evaluate', authMiddleware, async (req: any, res) => {
     res.status(500).json({
       code: 500,
       message: '评价失败',
+      data: null,
+    });
+  }
+});
+
+// 使用 AI 智能体生成评价建议
+router.post('/:id/ai-evaluate', authMiddleware, async (req: any, res) => {
+  try {
+    const { id } = req.params;
+
+    const achievement = await prisma.achievement.findUnique({
+      where: { id },
+    });
+
+    if (!achievement) {
+      return res.status(404).json({
+        code: 404,
+        message: '成果不存在',
+        data: null,
+      });
+    }
+
+    if (achievement.studentId === req.student.id) {
+      return res.status(400).json({
+        code: 400,
+        message: '不能评价自己的成果',
+        data: null,
+      });
+    }
+
+    const dimensions = await enabledEvaluationDimensions();
+    const aiResult = await evaluateAchievementWithAgent(achievement, dimensions);
+    const attitude = normalizeScore(aiResult.scores.attitude);
+    const skill = normalizeScore(aiResult.scores.skill);
+    const result = normalizeScore(aiResult.scores.result);
+
+    if (!attitude || !skill || !result) {
+      return res.status(500).json({
+        code: 500,
+        message: 'AI 智能体返回的评分无效',
+        data: null,
+      });
+    }
+
+    const existingEvaluation = await prisma.evaluation.findUnique({
+      where: {
+        studentId_achievementId: {
+          studentId: req.student.id,
+          achievementId: id,
+        },
+      },
+    });
+
+    if (existingEvaluation) {
+      await prisma.evaluation.update({
+        where: { id: existingEvaluation.id },
+        data: { attitude, skill, result },
+      });
+    } else {
+      await prisma.evaluation.create({
+        data: {
+          id: uuidv4(),
+          studentId: req.student.id,
+          achievementId: id,
+          attitude,
+          skill,
+          result,
+        },
+      });
+    }
+
+    const updatedAchievement = await recalculateEvaluationAverages(id);
+
+    res.json({
+      code: 0,
+      message: aiResult.source === 'agent' ? 'AI 智能体评价完成' : '已生成本地智能评价',
+      data: {
+        scores: { attitude, skill, result },
+        summary: aiResult.summary,
+        suggestions: aiResult.suggestions,
+        source: aiResult.source,
+        avgAttitude: updatedAchievement.avgAttitude,
+        avgSkill: updatedAchievement.avgSkill,
+        avgResult: updatedAchievement.avgResult,
+        evalCount: updatedAchievement.evalCount,
+      },
+    });
+  } catch (error) {
+    console.error('AI evaluate achievement error:', error);
+    res.status(500).json({
+      code: 500,
+      message: 'AI 智能体评价失败',
       data: null,
     });
   }
