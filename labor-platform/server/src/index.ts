@@ -8,13 +8,13 @@ import courseRoutes from './routes/courses.js';
 import studentRoutes from './routes/students.js';
 import adminRoutes from './routes/admin.js';
 import uploadRoutes from './routes/upload.js';
+import { isDefaultJwtSecret, NODE_ENV } from './config.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 // 环境变量配置
 const PORT = parseInt(process.env.PORT || '3001', 10);
-const NODE_ENV = process.env.NODE_ENV || 'development';
 
 // CORS 配置：从环境变量读取允许的域名，支持逗号分隔
 const CORS_ORIGINS = process.env.CORS_ORIGINS
@@ -25,9 +25,14 @@ const app = express();
 
 app.use(cors({
   origin: (origin, callback) => {
-    // 允许不带 origin 的请求（如 curl、Postman）
     if (!origin) return callback(null, true);
-    if (CORS_ORIGINS.includes(origin) || CORS_ORIGINS.includes('*')) {
+    if (CORS_ORIGINS.includes('*')) {
+      if (NODE_ENV === 'production') {
+        return callback(new Error('生产环境不允许 CORS_ORIGINS=*'));
+      }
+      return callback(null, true);
+    }
+    if (CORS_ORIGINS.includes(origin)) {
       return callback(null, true);
     }
     callback(new Error('CORS 策略阻止'));
@@ -40,7 +45,12 @@ app.use(express.urlencoded({ extended: true }));
 
 // 静态文件服务（上传目录）
 const uploadsDir = path.join(__dirname, '../uploads');
-app.use('/uploads', express.static(uploadsDir));
+app.use('/uploads', express.static(uploadsDir, {
+  setHeaders: (res) => {
+    res.setHeader('X-Content-Type-Options', 'nosniff');
+    res.setHeader('Content-Security-Policy', "default-src 'none'; img-src 'self'; media-src 'self'; style-src 'none'; script-src 'none'");
+  },
+}));
 
 app.get('/api/health', (req, res) => {
   res.json({ status: 'ok', timestamp: new Date().toISOString() });
@@ -58,9 +68,8 @@ app.use((err: any, req: express.Request, res: express.Response, next: express.Ne
   res.status(500).json({ code: 500, message: '服务器内部错误', data: null });
 });
 
-// 生产环境 JWT Secret 检查
-if (NODE_ENV === 'production' && !process.env.JWT_SECRET) {
-  console.error('❌ 错误：生产环境必须设置 JWT_SECRET 环境变量！');
+if (NODE_ENV === 'production' && isDefaultJwtSecret()) {
+  console.error('❌ 错误：生产环境必须设置独立的 JWT_SECRET，不能使用默认密钥！');
   console.error('   请在 .env 文件中设置 JWT_SECRET="your-secret-key"');
   process.exit(1);
 }

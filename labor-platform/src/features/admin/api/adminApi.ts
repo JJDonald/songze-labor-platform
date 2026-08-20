@@ -84,6 +84,42 @@ export interface EvaluationDimension {
   updatedAt: string;
 }
 
+export type AiThinkingLevel = 'off' | 'low' | 'medium' | 'high';
+
+export interface AiSettings {
+  provider: 'custom' | 'openai_compatible';
+  baseUrl: string;
+  model: string;
+  endpointPath: string;
+  temperature: number;
+  thinkingLevel: AiThinkingLevel;
+  enabled: boolean;
+  hasApiKey: boolean;
+  apiKeyMasked: string;
+  source: 'database' | 'env' | 'default';
+  evaluateUrl: string;
+}
+
+export interface AiSettingsUpdateInput {
+  provider?: 'custom' | 'openai_compatible';
+  baseUrl?: string;
+  apiKey?: string;
+  model?: string;
+  endpointPath?: string;
+  temperature?: number;
+  thinkingLevel?: AiThinkingLevel;
+  enabled?: boolean;
+  clearApiKey?: boolean;
+}
+
+export interface AiConnectionTestResult {
+  ok: boolean;
+  message: string;
+  evaluateUrl?: string;
+  status?: number;
+  settings?: AiSettings;
+}
+
 export const adminApi = {
   // Stats
   getStats: () => api.get<AdminStats>('/admin/stats'),
@@ -148,6 +184,11 @@ export const adminApi = {
   updateEvaluationDimensions: (dimensions: EvaluationDimension[]) =>
     api.put<EvaluationDimension[]>('/admin/evaluation-dimensions', { dimensions }),
   resetEvaluationDimensions: () => api.post<EvaluationDimension[]>('/admin/evaluation-dimensions/reset'),
+
+  // AI service settings
+  getAiSettings: () => api.get<AiSettings>('/admin/ai-settings'),
+  updateAiSettings: (data: AiSettingsUpdateInput) => api.put<AiSettings>('/admin/ai-settings', data),
+  testAiSettings: () => api.post<AiConnectionTestResult>('/admin/ai-settings/test'),
 
   // Upload
   uploadImage: (file: File) => api.upload<{ url: string; filename: string }>('/upload', file),

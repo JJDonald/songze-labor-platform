@@ -9,6 +9,7 @@ export const AdminUsers = () => {
   const currentUser = useUserStore((state) => state.currentUser);
   const [showModal, setShowModal] = useState(false);
   const [editingUser, setEditingUser] = useState<AdminUser | null>(null);
+  const [error, setError] = useState('');
   const [formData, setFormData] = useState({
     studentId: '',
     password: '',
@@ -29,6 +30,7 @@ export const AdminUsers = () => {
       queryClient.invalidateQueries({ queryKey: ['admin', 'users'] });
       closeModal();
     },
+    onError: (err) => setError(err instanceof Error ? err.message : '创建失败'),
   });
 
   const updateMutation = useMutation({
@@ -38,6 +40,7 @@ export const AdminUsers = () => {
       queryClient.invalidateQueries({ queryKey: ['admin', 'users'] });
       closeModal();
     },
+    onError: (err) => setError(err instanceof Error ? err.message : '更新失败'),
   });
 
   const deleteMutation = useMutation({
@@ -45,6 +48,7 @@ export const AdminUsers = () => {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['admin', 'users'] });
     },
+    onError: (err) => alert(err instanceof Error ? err.message : '删除失败'),
   });
 
   const users = usersData?.data || [];
@@ -52,6 +56,7 @@ export const AdminUsers = () => {
   const openCreateModal = () => {
     setEditingUser(null);
     setFormData({ studentId: '', password: '', nickname: '', gradeId: 6, classCode: '', role: 'STUDENT' });
+    setError('');
     setShowModal(true);
   };
 
@@ -65,12 +70,14 @@ export const AdminUsers = () => {
       classCode: user.classCode,
       role: user.role,
     });
+    setError('');
     setShowModal(true);
   };
 
   const closeModal = () => {
     setShowModal(false);
     setEditingUser(null);
+    setError('');
   };
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -105,19 +112,19 @@ export const AdminUsers = () => {
   }
 
   return (
-    <div className="min-h-screen bg-brand-cream py-8">
-      <div className="max-w-6xl mx-auto px-6">
-        <div className="flex justify-between items-center mb-6">
-          <h1 className="text-3xl font-bold">👥 用户管理</h1>
+    <div className="min-h-screen bg-brand-cream py-6 sm:py-8">
+      <div className="mx-auto max-w-6xl px-4 sm:px-6">
+        <div className="mb-6 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+          <h1 className="text-2xl font-bold sm:text-3xl">👥 用户管理</h1>
           <button
             onClick={openCreateModal}
-            className="bg-brand-green text-white px-6 py-2 rounded-lg hover:bg-brand-green-light"
+            className="rounded-lg bg-brand-green px-5 py-2.5 text-white hover:bg-brand-green-light sm:px-6"
           >
             + 添加用户
           </button>
         </div>
 
-        <div className="bg-white rounded-xl shadow-sm overflow-hidden">
+        <div className="table-scroll overflow-hidden rounded-xl bg-white shadow-sm">
           <table className="w-full">
             <thead className="bg-gray-50">
               <tr>
@@ -169,10 +176,11 @@ export const AdminUsers = () => {
 
       {/* Modal */}
       {showModal && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-xl p-6 w-full max-w-md">
-            <h2 className="text-xl font-bold mb-4">{editingUser ? '编辑用户' : '添加用户'}</h2>
+        <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/50 p-0 sm:items-center sm:p-4">
+          <div className="max-h-[92dvh] w-full max-w-md overflow-y-auto rounded-t-2xl bg-white p-5 safe-bottom sm:rounded-xl sm:p-6">
+            <h2 className="mb-4 text-xl font-bold">{editingUser ? '编辑用户' : '添加用户'}</h2>
             <form onSubmit={handleSubmit}>
+              {error && <div className="mb-4 rounded-lg bg-red-50 px-3 py-2 text-sm text-red-600">{error}</div>}
               <div className="space-y-4">
                 <div>
                   <label className="block text-sm font-medium mb-1">学籍号</label>

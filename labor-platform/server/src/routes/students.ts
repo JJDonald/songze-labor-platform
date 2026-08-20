@@ -1,52 +1,15 @@
 import { Router } from 'express';
 import prisma from '../prisma.js';
-import jwt from 'jsonwebtoken';
-import { JWT_SECRET } from '../config.js';
+import { authenticate, type AuthRequest } from '../middleware/admin.js';
+import { safeJsonParse } from '../utils.js';
 
 const router = Router();
 
-const authMiddleware = async (req: any, res: any, next: any) => {
-  try {
-    const authHeader = req.headers.authorization;
-    if (!authHeader || !authHeader.startsWith('Bearer ')) {
-      return res.status(401).json({
-        code: 401,
-        message: '未登录',
-        data: null,
-      });
-    }
-
-    const token = authHeader.substring(7);
-    const decoded = jwt.verify(token, JWT_SECRET) as { studentId: string };
-
-    const student = await prisma.student.findUnique({
-      where: { id: decoded.studentId },
-    });
-
-    if (!student) {
-      return res.status(401).json({
-        code: 401,
-        message: '用户不存在',
-        data: null,
-      });
-    }
-
-    req.student = student;
-    next();
-  } catch (error) {
-    res.status(401).json({
-      code: 401,
-      message: '登录已过期',
-      data: null,
-    });
-  }
-};
-
-router.get('/:id/profile', authMiddleware, async (req: any, res) => {
+router.get('/:id/profile', authenticate, async (req: AuthRequest, res) => {
   try {
     const { id } = req.params;
 
-    if (req.student.id !== id) {
+    if (req.student!.id !== id) {
       return res.status(403).json({
         code: 403,
         message: '无权访问',
@@ -111,14 +74,15 @@ router.get('/:id/profile', authMiddleware, async (req: any, res) => {
       },
     };
 
-    // 修复：显式声明类型为 any，解决 TS 严格模式报错
-    const timeline = achievements.map((a: any) => ({
+    const timeline = achievements.map((a) => ({
       id: a.id,
       createdAt: a.createdAt,
-      course: { title: '劳动项目', emoji: '📝' },
+      course: { title: a.courseTitle || '劳动项目', emoji: '📝', taskGroupId: 'other' },
       title: a.title,
       description: a.description,
-      images: a.images ? JSON.parse(a.images) : [],
+      reflection: a.reflection,
+      images: safeJsonParse<string[]>(a.images, []),
+      isPublic: a.isPublic,
       evalAttitude: a.evalAttitude,
       evalSkill: a.evalSkill,
       evalResult: a.evalResult,
@@ -126,9 +90,8 @@ router.get('/:id/profile', authMiddleware, async (req: any, res) => {
       isLikedByMe: false,
     }));
 
-    // 修复：显式声明类型为 any
-    const badgeStatus = allBadges.map((b: any) => {
-      const earned = badges.find((sb: any) => sb.badgeId === b.id);
+    const badgeStatus = allBadges.map((b) => {
+      const earned = badges.find((sb) => sb.badgeId === b.id);
       return {
         id: b.id,
         name: b.name,
@@ -158,19 +121,19 @@ router.get('/:id/profile', authMiddleware, async (req: any, res) => {
   }
 });
 
-router.get('/my-achievements', authMiddleware, async (req: any, res) => {
+router.get('/my-achievements', authenticate, async (req: AuthRequest, res) => {
   try {
     const achievements = await prisma.achievement.findMany({
-      where: { studentId: req.student.id },
+      where: { studentId: req.student!.id },
       orderBy: { createdAt: 'desc' },
     });
 
-    // 修复：显式声明类型为 any
-    const data = achievements.map((a: any) => ({
+    const data = achievements.map((a) => ({
       id: a.id,
       title: a.title,
       description: a.description,
-      images: a.images ? JSON.parse(a.images) : [],
+      reflection: a.reflection,
+      images: safeJsonParse<string[]>(a.images, []),
       isPublic: a.isPublic,
       evalAttitude: a.evalAttitude,
       evalSkill: a.evalSkill,

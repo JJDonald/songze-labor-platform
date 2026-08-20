@@ -8,3 +8,4 @@ export { AdminUsers } from './AdminUsers';
 export { AdminCourses } from './AdminCourses';
 export { AdminAchievements } from './AdminAchievements';
 export { AdminEvaluationDimensions } from './AdminEvaluationDimensions';
+export { NotFoundPage } from './NotFoundPage';

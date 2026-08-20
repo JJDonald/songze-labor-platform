@@ -31,15 +31,69 @@
   --shadow-lg: 0 8px 40px rgba(44,36,22,0.16);
 }
 
+html {
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
+}
+
 body {
   font-family: 'Noto Sans SC', sans-serif;
   background-color: #FEFAE0;
   color: #2C2416;
   margin: 0;
+  min-width: 0;
+  overflow-x: hidden;
+  -webkit-tap-highlight-color: transparent;
 }
 
 * {
   box-sizing: border-box;
+}
+
+img,
+video,
+canvas,
+svg {
+  max-width: 100%;
+  height: auto;
+}
+
+button,
+input,
+select,
+textarea {
+  font: inherit;
+  max-width: 100%;
+}
+
+/* iOS / 微信小程序 WebView 安全区 */
+.safe-top {
+  padding-top: env(safe-area-inset-top, 0px);
+}
+
+.safe-bottom {
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+}
+
+.safe-x {
+  padding-left: max(1rem, env(safe-area-inset-left, 0px));
+  padding-right: max(1rem, env(safe-area-inset-right, 0px));
+}
+
+.app-shell {
+  min-height: 100dvh;
+  padding-bottom: calc(0.5rem + env(safe-area-inset-bottom, 0px));
+}
+
+/* 管理端/表格横向滚动容器 */
+.table-scroll {
+  width: 100%;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+.table-scroll table {
+  min-width: 640px;
 }
 
 .wall-grid {
@@ -47,14 +101,23 @@ body {
   column-gap: 16px;
 }
 
-@media (max-width: 768px) {
+@media (max-width: 900px) {
   .wall-grid {
     columns: 2;
   }
 }
 
-@media (max-width: 480px) {
+@media (max-width: 560px) {
   .wall-grid {
     columns: 1;
+  }
+}
+
+/* 微信内置浏览器输入框放大问题规避 */
+@media (max-width: 768px) {
+  input,
+  select,
+  textarea {
+    font-size: 16px;
   }
 }

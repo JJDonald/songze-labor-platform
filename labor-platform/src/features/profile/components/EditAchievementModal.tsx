@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Modal, Button, Input } from '@/features/shared/components/ui';
 import type { Achievement } from '@/features/achievements/types';
 import { achievementsApi } from '@/features/achievements/api';
@@ -13,24 +13,34 @@ interface EditAchievementModalProps {
 }
 
 export const EditAchievementModal = ({ isOpen, achievement, onClose, onSuccess }: EditAchievementModalProps) => {
-  const initialForm = useMemo(() => ({
-    title: achievement?.title ?? '',
-    description: achievement?.description ?? '',
+  const [form, setForm] = useState({
+    title: '',
+    description: '',
     reflection: '',
-    images: achievement?.images ?? [],
+    images: [] as string[],
     isPublic: true,
-    evalAttitude: achievement?.evalAttitude ?? 0,
-    evalSkill: achievement?.evalSkill ?? 0,
-    evalResult: achievement?.evalResult ?? 0,
-  }), [achievement]);
-
-  const [form, setForm] = useState(initialForm);
+    evalAttitude: 0,
+    evalSkill: 0,
+    evalResult: 0,
+  });
   const [isUpdating, setIsUpdating] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
+  const [error, setError] = useState('');
 
-  if (achievement && form.title !== initialForm.title) {
-    setForm(initialForm);
-  }
+  useEffect(() => {
+    if (!achievement) return;
+    setForm({
+      title: achievement.title,
+      description: achievement.description,
+      reflection: achievement.reflection || '',
+      images: achievement.images ?? [],
+      isPublic: achievement.isPublic !== false,
+      evalAttitude: achievement.evalAttitude ?? 0,
+      evalSkill: achievement.evalSkill ?? 0,
+      evalResult: achievement.evalResult ?? 0,
+    });
+    setError('');
+  }, [achievement]);
 
   const { title, description, reflection, images, isPublic, evalAttitude, evalSkill, evalResult } = form;
   const updateForm = <K extends keyof typeof form>(key: K, value: typeof form[K]) => {
@@ -44,6 +54,8 @@ export const EditAchievementModal = ({ isOpen, achievement, onClose, onSuccess }
     const url = await achievementsApi.uploadImage(file);
     if (url) {
       updateForm('images', [...images, url]);
+    } else {
+      setError('图片上传失败，请重试');
     }
   };
 
@@ -55,6 +67,7 @@ export const EditAchievementModal = ({ isOpen, achievement, onClose, onSuccess }
     if (!achievement || !title.trim() || !description.trim()) return;
     
     setIsUpdating(true);
+    setError('');
     const success = await achievementsApi.update(achievement.id, {
       title,
       description,
@@ -70,6 +83,8 @@ export const EditAchievementModal = ({ isOpen, achievement, onClose, onSuccess }
     if (success) {
       onSuccess();
       onClose();
+    } else {
+      setError('保存失败，请稍后重试');
     }
   };
 
@@ -85,6 +100,8 @@ export const EditAchievementModal = ({ isOpen, achievement, onClose, onSuccess }
     if (success) {
       onSuccess();
       onClose();
+    } else {
+      setError('删除失败，请稍后重试');
     }
   };
 
@@ -108,6 +125,7 @@ export const EditAchievementModal = ({ isOpen, achievement, onClose, onSuccess }
   return (
     <Modal isOpen={isOpen} onClose={onClose} title="编辑成果 ✏️">
       <div className="space-y-4 max-h-[70vh] overflow-y-auto">
+        {error && <div className="rounded-lg bg-red-50 px-3 py-2 text-sm text-red-600">{error}</div>}
         <Input
           label="成果标题"
           value={title}
@@ -135,7 +153,20 @@ export const EditAchievementModal = ({ isOpen, achievement, onClose, onSuccess }
           />
         </div>
 
-        {/* 图片管理 */}
+        <div>
+          <label className="block text-sm font-semibold mb-2">是否公开展示</label>
+          <div className="flex gap-4">
+            <label className="flex items-center gap-2 cursor-pointer">
+              <input type="radio" checked={isPublic} onChange={() => updateForm('isPublic', true)} />
+              <span className="text-sm">公开</span>
+            </label>
+            <label className="flex items-center gap-2 cursor-pointer">
+              <input type="radio" checked={!isPublic} onChange={() => updateForm('isPublic', false)} />
+              <span className="text-sm">仅自己可见</span>
+            </label>
+          </div>
+        </div>
+
         <div>
           <label className="block text-sm font-semibold mb-2">照片管理</label>
           
@@ -182,7 +213,6 @@ export const EditAchievementModal = ({ isOpen, achievement, onClose, onSuccess }
           )}
         </div>
 
-        {/* 自我评价 */}
         <div>
           <label className="block text-sm font-semibold mb-3">自我评价</label>
           <div className="space-y-3">
@@ -201,7 +231,6 @@ export const EditAchievementModal = ({ isOpen, achievement, onClose, onSuccess }
           </div>
         </div>
 
-        {/* 按钮 */}
         <div className="flex gap-3 pt-4 border-t">
           <Button
             variant="ghost"

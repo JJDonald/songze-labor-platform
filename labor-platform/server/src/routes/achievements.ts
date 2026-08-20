@@ -1,15 +1,50 @@
 import { Router } from 'express';
 import prisma from '../prisma.js';
-import jwt from 'jsonwebtoken';
-import multer from 'multer';
-import path from 'path';
-import { fileURLToPath } from 'url';
 import { v4 as uuidv4 } from 'uuid';
-import { JWT_SECRET } from '../config.js';
+import { authenticate, optionalAuthenticate, rateLimit, type AuthRequest } from '../middleware/admin.js';
 import { enabledEvaluationDimensions, normalizeScore } from '../services/evaluationDimensions.js';
 import { evaluateAchievementWithAgent } from '../services/aiEvaluation.js';
+import { studentImageUpload } from '../upload.js';
+import { clampScore, parsePagination, requireCompleteSelfScores, safeJsonParse } from '../utils.js';
 
 const router = Router();
+
+const parseImages = (images: string | null | undefined) =>
+  safeJsonParse<string[]>(images, []).filter((item) => typeof item === 'string');
+
+const loadCourseMap = async (courseIds: Array<string | null | undefined>) => {
+  const ids = [...new Set(courseIds.filter((id): id is string => Boolean(id)))];
+  if (ids.length === 0) return new Map<string, { id: string; title: string; taskGroupId: string }>();
+  const courses = await prisma.course.findMany({
+    where: { id: { in: ids } },
+    select: { id: true, title: true, taskGroupId: true },
+  });
+  return new Map(courses.map((course) => [course.id, course]));
+};
+
+const serializeCourse = (
+  courseId: string | null,
+  courseTitle: string | null,
+  courseMap: Map<string, { id: string; title: string; taskGroupId: string }>
+) => {
+  const course = courseId ? courseMap.get(courseId) : undefined;
+  if (course) {
+    return { title: courseTitle || course.title, taskGroupId: course.taskGroupId };
+  }
+  if (courseTitle) {
+    return { title: courseTitle, taskGroupId: 'other' };
+  }
+  return null;
+};
+
+const canViewAchievement = (
+  achievement: { isPublic: boolean; studentId: string },
+  user?: { id: string; role: string }
+) => {
+  if (achievement.isPublic) return true;
+  if (!user) return false;
+  return user.role === 'ADMIN' || user.id === achievement.studentId;
+};
 
 const recalculateEvaluationAverages = async (achievementId: string) => {
   const evaluations = await prisma.evaluation.findMany({
@@ -43,74 +78,19 @@ const recalculateEvaluationAverages = async (achievementId: string) => {
   });
 };
 
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
-
-const storage = multer.diskStorage({
-  destination: path.join(__dirname, '../../uploads'),
-  filename: (req, file, cb) => {
-    const ext = path.extname(file.originalname);
-    cb(null, `${uuidv4()}${ext}`);
-  },
-});
-
-const upload = multer({
-  storage,
-  limits: { fileSize: 5 * 1024 * 1024 },
-  fileFilter: (req, file, cb) => {
-    const allowedTypes = ['image/jpeg', 'image/png', 'image/gif'];
-    if (allowedTypes.includes(file.mimetype)) {
-      cb(null, true);
-    } else {
-      cb(new Error('只支持 JPG、PNG、GIF 格式的图片'));
-    }
-  },
-});
-
-const authMiddleware = async (req: any, res: any, next: any) => {
+router.get('/', optionalAuthenticate, async (req: AuthRequest, res) => {
   try {
-    const authHeader = req.headers.authorization;
-    if (!authHeader || !authHeader.startsWith('Bearer ')) {
-      return res.status(401).json({
-        code: 401,
-        message: '未登录',
-        data: null,
+    const { taskGroupId } = req.query;
+    const { page, limit } = parsePagination(req.query.page, req.query.limit);
+    const where: { isPublic: boolean; courseId?: { in: string[] } } = { isPublic: true };
+
+    if (typeof taskGroupId === 'string' && taskGroupId && taskGroupId !== 'all') {
+      const courses = await prisma.course.findMany({
+        where: { taskGroupId },
+        select: { id: true },
       });
+      where.courseId = { in: courses.map((course) => course.id) };
     }
-
-    const token = authHeader.substring(7);
-    const decoded = jwt.verify(token, JWT_SECRET) as { studentId: string };
-
-    const student = await prisma.student.findUnique({
-      where: { id: decoded.studentId },
-    });
-
-    if (!student) {
-      return res.status(401).json({
-        code: 401,
-        message: '用户不存在',
-        data: null,
-      });
-    }
-
-    req.student = student;
-    next();
-  } catch (error) {
-    res.status(401).json({
-      code: 401,
-      message: '登录已过期',
-      data: null,
-    });
-  }
-};
-
-router.get('/', async (req, res) => {
-  try {
-    const { taskGroupId, page = '0', limit = '20' } = req.query;
-    const pageNum = parseInt(page as string);
-    const limitNum = parseInt(limit as string);
-
-    const where: any = { isPublic: true };
 
     const [achievements, total] = await Promise.all([
       prisma.achievement.findMany({
@@ -127,24 +107,13 @@ router.get('/', async (req, res) => {
           },
         },
         orderBy: { createdAt: 'desc' },
-        skip: pageNum * limitNum,
-        take: limitNum,
+        skip: page * limit,
+        take: limit,
       }),
       prisma.achievement.count({ where }),
     ]);
 
-    let currentStudentId: string | null = null;
-    const authHeader = req.headers.authorization;
-    if (authHeader && authHeader.startsWith('Bearer ')) {
-      try {
-        const token = authHeader.substring(7);
-        const decoded = jwt.verify(token, JWT_SECRET) as { studentId: string };
-        currentStudentId = decoded.studentId;
-      } catch (error) {
-        currentStudentId = null;
-      }
-    }
-
+    const currentStudentId = req.user?.id ?? null;
     let likedAchievementIds: string[] = [];
     if (currentStudentId) {
       const likes = await prisma.like.findMany({
@@ -154,16 +123,17 @@ router.get('/', async (req, res) => {
         },
         select: { achievementId: true },
       });
-      likedAchievementIds = likes.map((l: { achievementId: string }) => l.achievementId);
+      likedAchievementIds = likes.map((like) => like.achievementId);
     }
 
-    const data = achievements.map((a: any) => ({
+    const courseMap = await loadCourseMap(achievements.map((a) => a.courseId));
+    const data = achievements.map((a) => ({
       id: a.id,
       student: a.student,
-      course: a.courseTitle ? { title: a.courseTitle, taskGroupId: 'other' } : null,
+      course: serializeCourse(a.courseId, a.courseTitle, courseMap),
       title: a.title,
       description: a.description,
-      images: a.images ? JSON.parse(a.images) : [],
+      images: parseImages(a.images),
       evalAttitude: a.evalAttitude,
       evalSkill: a.evalSkill,
       evalResult: a.evalResult,
@@ -191,7 +161,7 @@ router.get('/', async (req, res) => {
   }
 });
 
-router.post('/', authMiddleware, async (req: any, res) => {
+router.post('/', authenticate, async (req: AuthRequest, res) => {
   try {
     const { title, description, reflection, images, isPublic, evalAttitude, evalSkill, evalResult, courseId, courseTitle } = req.body;
 
@@ -203,26 +173,38 @@ router.post('/', authMiddleware, async (req: any, res) => {
       });
     }
 
-    const achievement = await prisma.achievement.create({
-      data: {
-        id: uuidv4(),
-        studentId: req.student.id,
-        courseId: courseId || null,
-        courseTitle: courseTitle || null,
-        title,
-        description,
-        reflection: reflection || null,
-        images: images ? JSON.stringify(images) : '[]',
-        isPublic: isPublic !== false,
-        evalAttitude: evalAttitude || 0,
-        evalSkill: evalSkill || 0,
-        evalResult: evalResult || 0,
-      },
-    });
+    let scores;
+    try {
+      scores = requireCompleteSelfScores(evalAttitude, evalSkill, evalResult);
+    } catch (error) {
+      return res.status(400).json({
+        code: 400,
+        message: error instanceof Error ? error.message : '请完成自我评价',
+        data: null,
+      });
+    }
 
-    await prisma.student.update({
-      where: { id: req.student.id },
-      data: { totalAchievements: { increment: 1 } },
+    const safeImages = Array.isArray(images) ? images.filter((item) => typeof item === 'string') : [];
+    const achievement = await prisma.$transaction(async (tx) => {
+      const created = await tx.achievement.create({
+        data: {
+          id: uuidv4(),
+          studentId: req.student!.id,
+          courseId: courseId || null,
+          courseTitle: courseTitle || null,
+          title: String(title).trim(),
+          description: String(description).trim(),
+          reflection: reflection ? String(reflection).trim() : null,
+          images: JSON.stringify(safeImages),
+          isPublic: isPublic !== false,
+          ...scores,
+        },
+      });
+      await tx.student.update({
+        where: { id: req.student!.id },
+        data: { totalAchievements: { increment: 1 } },
+      });
+      return created;
     });
 
     res.json({
@@ -240,62 +222,68 @@ router.post('/', authMiddleware, async (req: any, res) => {
   }
 });
 
-router.post('/:id/like', authMiddleware, async (req: any, res) => {
+router.post('/:id/like', authenticate, async (req: AuthRequest, res) => {
   try {
     const { id } = req.params;
+    const achievement = await prisma.achievement.findUnique({
+      where: { id },
+      select: { id: true, isPublic: true, studentId: true, likesCount: true },
+    });
+
+    if (!achievement || !canViewAchievement(achievement, req.user)) {
+      return res.status(404).json({
+        code: 404,
+        message: '成果不存在或无权查看',
+        data: null,
+      });
+    }
 
     const existingLike = await prisma.like.findUnique({
       where: {
         studentId_achievementId: {
-          studentId: req.student.id,
+          studentId: req.student!.id,
           achievementId: id,
         },
       },
     });
 
-    if (existingLike) {
-      await prisma.like.delete({
-        where: { id: existingLike.id },
-      });
-      await prisma.achievement.update({
-        where: { id },
-        data: { likesCount: { decrement: 1 } },
-      });
-      res.json({
-        code: 0,
-        message: '取消点赞成功',
-        data: { liked: false },
-      });
-    } else {
-      await prisma.like.create({
+    const liked = await prisma.$transaction(async (tx) => {
+      if (existingLike) {
+        await tx.like.delete({ where: { id: existingLike.id } });
+        await tx.achievement.update({
+          where: { id },
+          data: { likesCount: { decrement: 1 } },
+        });
+        await tx.student.update({
+          where: { id: achievement.studentId },
+          data: { totalLikes: { decrement: 1 } },
+        });
+        return false;
+      }
+
+      await tx.like.create({
         data: {
           id: uuidv4(),
-          studentId: req.student.id,
+          studentId: req.student!.id,
           achievementId: id,
         },
       });
-      await prisma.achievement.update({
+      await tx.achievement.update({
         where: { id },
         data: { likesCount: { increment: 1 } },
       });
-
-      const achievement = await prisma.achievement.findUnique({
-        where: { id },
-        select: { studentId: true },
+      await tx.student.update({
+        where: { id: achievement.studentId },
+        data: { totalLikes: { increment: 1 } },
       });
-      if (achievement) {
-        await prisma.student.update({
-          where: { id: achievement.studentId },
-          data: { totalLikes: { increment: 1 } },
-        });
-      }
+      return true;
+    });
 
-      res.json({
-        code: 0,
-        message: '点赞成功',
-        data: { liked: true },
-      });
-    }
+    res.json({
+      code: 0,
+      message: liked ? '点赞成功' : '取消点赞成功',
+      data: { liked },
+    });
   } catch (error) {
     console.error('Like achievement error:', error);
     res.status(500).json({
@@ -306,24 +294,34 @@ router.post('/:id/like', authMiddleware, async (req: any, res) => {
   }
 });
 
-router.post('/upload', authMiddleware, upload.single('image'), (req: any, res) => {
-  if (!req.file) {
-    return res.status(400).json({
-      code: 400,
-      message: '请选择图片',
-      data: null,
-    });
-  }
+router.post('/upload', authenticate, rateLimit('upload', 20, 10 * 60 * 1000), (req: AuthRequest, res) => {
+  studentImageUpload.single('file')(req, res, (err) => {
+    if (err) {
+      const message = err.message || '上传失败';
+      return res.status(400).json({
+        code: 400,
+        message: message.includes('File too large') ? '图片大小不能超过 5MB' : message,
+        data: null,
+      });
+    }
 
-  const imageUrl = `/uploads/${req.file.filename}`;
-  res.json({
-    code: 0,
-    message: '上传成功',
-    data: { url: imageUrl },
+    if (!req.file) {
+      return res.status(400).json({
+        code: 400,
+        message: '请选择图片',
+        data: null,
+      });
+    }
+
+    res.json({
+      code: 0,
+      message: '上传成功',
+      data: { url: `/uploads/${req.file.filename}` },
+    });
   });
 });
 
-router.put('/:id', authMiddleware, async (req: any, res) => {
+router.put('/:id', authenticate, async (req: AuthRequest, res) => {
   try {
     const { id } = req.params;
     const { title, description, reflection, images, isPublic, evalAttitude, evalSkill, evalResult } = req.body;
@@ -340,7 +338,7 @@ router.put('/:id', authMiddleware, async (req: any, res) => {
       });
     }
 
-    if (achievement.studentId !== req.student.id) {
+    if (achievement.studentId !== req.student!.id) {
       return res.status(403).json({
         code: 403,
         message: '无权编辑此成果',
@@ -351,14 +349,14 @@ router.put('/:id', authMiddleware, async (req: any, res) => {
     const updated = await prisma.achievement.update({
       where: { id },
       data: {
-        title: title || achievement.title,
-        description: description || achievement.description,
-        reflection: reflection !== undefined ? reflection : achievement.reflection,
-        images: images ? JSON.stringify(images) : achievement.images,
-        isPublic: isPublic !== undefined ? isPublic : achievement.isPublic,
-        evalAttitude: evalAttitude !== undefined ? evalAttitude : achievement.evalAttitude,
-        evalSkill: evalSkill !== undefined ? evalSkill : achievement.evalSkill,
-        evalResult: evalResult !== undefined ? evalResult : achievement.evalResult,
+        title: title ? String(title).trim() : achievement.title,
+        description: description ? String(description).trim() : achievement.description,
+        reflection: reflection !== undefined ? (reflection ? String(reflection).trim() : null) : achievement.reflection,
+        images: Array.isArray(images) ? JSON.stringify(images.filter((item) => typeof item === 'string')) : achievement.images,
+        isPublic: isPublic !== undefined ? Boolean(isPublic) : achievement.isPublic,
+        evalAttitude: evalAttitude !== undefined ? clampScore(evalAttitude, achievement.evalAttitude) : achievement.evalAttitude,
+        evalSkill: evalSkill !== undefined ? clampScore(evalSkill, achievement.evalSkill) : achievement.evalSkill,
+        evalResult: evalResult !== undefined ? clampScore(evalResult, achievement.evalResult) : achievement.evalResult,
       },
     });
 
@@ -377,10 +375,9 @@ router.put('/:id', authMiddleware, async (req: any, res) => {
   }
 });
 
-router.delete('/:id', authMiddleware, async (req: any, res) => {
+router.delete('/:id', authenticate, async (req: AuthRequest, res) => {
   try {
     const { id } = req.params;
-
     const achievement = await prisma.achievement.findUnique({
       where: { id },
     });
@@ -393,7 +390,7 @@ router.delete('/:id', authMiddleware, async (req: any, res) => {
       });
     }
 
-    if (achievement.studentId !== req.student.id) {
+    if (achievement.studentId !== req.student!.id) {
       return res.status(403).json({
         code: 403,
         message: '无权删除此成果',
@@ -401,17 +398,15 @@ router.delete('/:id', authMiddleware, async (req: any, res) => {
       });
     }
 
-    await prisma.like.deleteMany({
-      where: { achievementId: id },
-    });
-
-    await prisma.achievement.delete({
-      where: { id },
-    });
-
-    await prisma.student.update({
-      where: { id: req.student.id },
-      data: { totalAchievements: { decrement: 1 } },
+    await prisma.$transaction(async (tx) => {
+      await tx.achievement.delete({ where: { id } });
+      await tx.student.update({
+        where: { id: req.student!.id },
+        data: {
+          totalAchievements: { decrement: 1 },
+          totalLikes: { decrement: achievement.likesCount },
+        },
+      });
     });
 
     res.json({
@@ -429,11 +424,9 @@ router.delete('/:id', authMiddleware, async (req: any, res) => {
   }
 });
 
-// 获取成果详情（包含评价信息）
-router.get('/:id', async (req, res) => {
+router.get('/:id', optionalAuthenticate, async (req: AuthRequest, res) => {
   try {
     const { id } = req.params;
-
     const achievement = await prisma.achievement.findUnique({
       where: { id },
       include: {
@@ -449,63 +442,53 @@ router.get('/:id', async (req, res) => {
       },
     });
 
-    if (!achievement) {
+    if (!achievement || !canViewAchievement(achievement, req.user)) {
       return res.status(404).json({
         code: 404,
-        message: '成果不存在',
+        message: '成果不存在或无权查看',
         data: null,
       });
     }
 
-    // 获取当前用户
-    let currentStudentId: string | null = null;
-    let myEvaluation: any = null;
-    const authHeader = req.headers.authorization;
-    if (authHeader && authHeader.startsWith('Bearer ')) {
-      try {
-        const token = authHeader.substring(7);
-        const decoded = jwt.verify(token, JWT_SECRET) as { studentId: string };
-        currentStudentId = decoded.studentId;
-
-        // 获取当前用户的评价
-        myEvaluation = await prisma.evaluation.findUnique({
+    const currentStudentId = req.user?.id ?? null;
+    let myEvaluation = null;
+    let isLikedByMe = false;
+    if (currentStudentId) {
+      const [evaluation, like] = await Promise.all([
+        prisma.evaluation.findUnique({
           where: {
             studentId_achievementId: {
               studentId: currentStudentId,
               achievementId: id,
             },
           },
-        });
-      } catch (error) {
-        currentStudentId = null;
-      }
-    }
-
-    // 检查是否点赞
-    let isLikedByMe = false;
-    if (currentStudentId) {
-      const like = await prisma.like.findUnique({
-        where: {
-          studentId_achievementId: {
-            studentId: currentStudentId,
-            achievementId: id,
+        }),
+        prisma.like.findUnique({
+          where: {
+            studentId_achievementId: {
+              studentId: currentStudentId,
+              achievementId: id,
+            },
           },
-        },
-      });
-      isLikedByMe = !!like;
+        }),
+      ]);
+      myEvaluation = evaluation;
+      isLikedByMe = Boolean(like);
     }
 
+    const courseMap = await loadCourseMap([achievement.courseId]);
     res.json({
       code: 0,
       message: 'success',
       data: {
         id: achievement.id,
         student: achievement.student,
-        course: achievement.courseTitle ? { title: achievement.courseTitle, taskGroupId: 'other' } : null,
+        course: serializeCourse(achievement.courseId, achievement.courseTitle, courseMap),
         title: achievement.title,
         description: achievement.description,
         reflection: achievement.reflection,
-        images: achievement.images ? JSON.parse(achievement.images) : [],
+        images: parseImages(achievement.images),
+        isPublic: achievement.isPublic,
         evalAttitude: achievement.evalAttitude,
         evalSkill: achievement.evalSkill,
         evalResult: achievement.evalResult,
@@ -516,11 +499,13 @@ router.get('/:id', async (req, res) => {
         likesCount: achievement.likesCount,
         createdAt: achievement.createdAt,
         isLikedByMe,
-        myEvaluation: myEvaluation ? {
-          attitude: myEvaluation.attitude,
-          skill: myEvaluation.skill,
-          result: myEvaluation.result,
-        } : null,
+        myEvaluation: myEvaluation
+          ? {
+              attitude: myEvaluation.attitude,
+              skill: myEvaluation.skill,
+              result: myEvaluation.result,
+            }
+          : null,
         isOwner: currentStudentId === achievement.studentId,
         evaluationDimensions: await enabledEvaluationDimensions(),
       },
@@ -535,24 +520,16 @@ router.get('/:id', async (req, res) => {
   }
 });
 
-// 提交或更新评价
-router.post('/:id/evaluate', authMiddleware, async (req: any, res) => {
+router.post('/:id/evaluate', authenticate, async (req: AuthRequest, res) => {
   try {
     const { id } = req.params;
     const { attitude, skill, result } = req.body;
+    const scores = [attitude, skill, result].map((value) => clampScore(value, 0));
 
-    if (!attitude || !skill || !result) {
+    if (scores.some((score) => score < 1 || score > 5)) {
       return res.status(400).json({
         code: 400,
-        message: '请完成所有评分',
-        data: null,
-      });
-    }
-
-    if (attitude < 1 || attitude > 5 || skill < 1 || skill > 5 || result < 1 || result > 5) {
-      return res.status(400).json({
-        code: 400,
-        message: '评分必须在1-5之间',
+        message: '请完成所有评分，且评分必须在1-5之间',
         data: null,
       });
     }
@@ -561,16 +538,15 @@ router.post('/:id/evaluate', authMiddleware, async (req: any, res) => {
       where: { id },
     });
 
-    if (!achievement) {
+    if (!achievement || !canViewAchievement(achievement, req.user)) {
       return res.status(404).json({
         code: 404,
-        message: '成果不存在',
+        message: '成果不存在或无权查看',
         data: null,
       });
     }
 
-    // 不能评价自己的成果
-    if (achievement.studentId === req.student.id) {
+    if (achievement.studentId === req.student!.id) {
       return res.status(400).json({
         code: 400,
         message: '不能评价自己的成果',
@@ -578,38 +554,34 @@ router.post('/:id/evaluate', authMiddleware, async (req: any, res) => {
       });
     }
 
-    // 检查是否已评价
     const existingEvaluation = await prisma.evaluation.findUnique({
       where: {
         studentId_achievementId: {
-          studentId: req.student.id,
+          studentId: req.student!.id,
           achievementId: id,
         },
       },
     });
 
     if (existingEvaluation) {
-      // 更新评价
       await prisma.evaluation.update({
         where: { id: existingEvaluation.id },
-        data: { attitude, skill, result },
+        data: { attitude: scores[0], skill: scores[1], result: scores[2] },
       });
     } else {
-      // 创建新评价
       await prisma.evaluation.create({
         data: {
           id: uuidv4(),
-          studentId: req.student.id,
+          studentId: req.student!.id,
           achievementId: id,
-          attitude,
-          skill,
-          result,
+          attitude: scores[0],
+          skill: scores[1],
+          result: scores[2],
         },
       });
     }
 
     const updatedAchievement = await recalculateEvaluationAverages(id);
-
     res.json({
       code: 0,
       message: existingEvaluation ? '评价已更新' : '评价成功',
@@ -630,24 +602,22 @@ router.post('/:id/evaluate', authMiddleware, async (req: any, res) => {
   }
 });
 
-// 使用 AI 智能体生成评价建议
-router.post('/:id/ai-evaluate', authMiddleware, async (req: any, res) => {
+router.post('/:id/ai-evaluate', authenticate, rateLimit('ai-evaluate', 8, 10 * 60 * 1000), async (req: AuthRequest, res) => {
   try {
     const { id } = req.params;
-
     const achievement = await prisma.achievement.findUnique({
       where: { id },
     });
 
-    if (!achievement) {
+    if (!achievement || !canViewAchievement(achievement, req.user)) {
       return res.status(404).json({
         code: 404,
-        message: '成果不存在',
+        message: '成果不存在或无权查看',
         data: null,
       });
     }
 
-    if (achievement.studentId === req.student.id) {
+    if (achievement.studentId === req.student!.id) {
       return res.status(400).json({
         code: 400,
         message: '不能评价自己的成果',
@@ -672,7 +642,7 @@ router.post('/:id/ai-evaluate', authMiddleware, async (req: any, res) => {
     const existingEvaluation = await prisma.evaluation.findUnique({
       where: {
         studentId_achievementId: {
-          studentId: req.student.id,
+          studentId: req.student!.id,
           achievementId: id,
         },
       },
@@ -687,7 +657,7 @@ router.post('/:id/ai-evaluate', authMiddleware, async (req: any, res) => {
       await prisma.evaluation.create({
         data: {
           id: uuidv4(),
-          studentId: req.student.id,
+          studentId: req.student!.id,
           achievementId: id,
           attitude,
           skill,
@@ -697,7 +667,6 @@ router.post('/:id/ai-evaluate', authMiddleware, async (req: any, res) => {
     }
 
     const updatedAchievement = await recalculateEvaluationAverages(id);
-
     res.json({
       code: 0,
       message: aiResult.source === 'agent' ? 'AI 智能体评价完成' : '已生成本地智能评价',

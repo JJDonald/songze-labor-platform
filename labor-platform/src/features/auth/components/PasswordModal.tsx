@@ -33,28 +33,29 @@ export const PasswordModal = ({ isOpen, onClose }: PasswordModalProps) => {
       return;
     }
 
+    if (['123456', 'admin123', 'password', '111111'].includes(newPassword.toLowerCase())) {
+      setError('密码过于简单，请更换');
+      return;
+    }
+
     setIsUpdating(true);
     
     try {
-      const response = await api.post('/auth/change-password', {
+      await api.post('/auth/change-password', {
         oldPassword,
         newPassword,
       });
 
-      if (response.code === 0) {
-        setSuccess(true);
-        setOldPassword('');
-        setNewPassword('');
-        setConfirmPassword('');
-        setTimeout(() => {
-          setSuccess(false);
-          onClose();
-        }, 1500);
-      } else {
-        setError(response.message);
-      }
-    } catch {
-      setError('修改失败，请检查网络');
+      setSuccess(true);
+      setOldPassword('');
+      setNewPassword('');
+      setConfirmPassword('');
+      setTimeout(() => {
+        setSuccess(false);
+        onClose();
+      }, 1500);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : '修改失败，请检查网络');
     }
     
     setIsUpdating(false);

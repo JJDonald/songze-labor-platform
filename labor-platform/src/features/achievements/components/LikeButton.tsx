@@ -12,6 +12,7 @@ export const LikeButton = ({ achievementId, likesCount, isLiked }: LikeButtonPro
 
   return (
     <button
+      aria-label={isLiked ? '取消点赞' : '点赞'}
       onClick={(e) => {
         e.stopPropagation();
         likeMutation.mutate();

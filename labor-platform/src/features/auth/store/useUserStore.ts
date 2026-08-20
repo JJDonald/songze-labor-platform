@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
-import { api } from '@/lib/api';
+import { api, ApiError } from '@/lib/api';
 
 interface User {
   id: string;
@@ -20,8 +20,8 @@ interface UserState {
   token: string | null;
   isLoading: boolean;
   error: string | null;
-  
-  register: (studentId: string, nickname: string, gradeId: number, classCode: string) => Promise<boolean>;
+
+  register: (studentId: string, nickname: string, gradeId: number, classCode: string, password: string) => Promise<boolean>;
   login: (studentId: string, password: string) => Promise<boolean>;
   logout: () => void;
   fetchCurrentUser: () => Promise<void>;
@@ -38,7 +38,7 @@ export const useUserStore = create<UserState>()(
       isLoading: false,
       error: null,
 
-      register: async (studentId, nickname, gradeId, classCode) => {
+      register: async (studentId, nickname, gradeId, classCode, password) => {
         set({ isLoading: true, error: null });
         try {
           const response = await api.post<{ token: string; student: User }>('/auth/register', {
@@ -46,23 +46,22 @@ export const useUserStore = create<UserState>()(
             nickname,
             gradeId,
             classCode,
+            password,
           });
 
-          if (response.code === 0 && response.data) {
-            api.setAuthToken(response.data.token);
-            set({
-              currentUser: response.data.student,
-              isAuthenticated: true,
-              token: response.data.token,
-              isLoading: false,
-            });
-            return true;
-          } else {
-            set({ error: response.message, isLoading: false });
-            return false;
-          }
-        } catch {
-          set({ error: '注册失败，请检查网络连接', isLoading: false });
+          api.setAuthToken(response.data.token);
+          set({
+            currentUser: response.data.student,
+            isAuthenticated: true,
+            token: response.data.token,
+            isLoading: false,
+          });
+          return true;
+        } catch (error) {
+          set({
+            error: error instanceof ApiError ? error.message : '注册失败，请检查网络连接',
+            isLoading: false,
+          });
           return false;
         }
       },
@@ -75,21 +74,19 @@ export const useUserStore = create<UserState>()(
             password,
           });
 
-          if (response.code === 0 && response.data) {
-            api.setAuthToken(response.data.token);
-            set({
-              currentUser: response.data.student,
-              isAuthenticated: true,
-              token: response.data.token,
-              isLoading: false,
-            });
-            return true;
-          } else {
-            set({ error: response.message, isLoading: false });
-            return false;
-          }
-        } catch {
-          set({ error: '登录失败，请检查网络连接', isLoading: false });
+          api.setAuthToken(response.data.token);
+          set({
+            currentUser: response.data.student,
+            isAuthenticated: true,
+            token: response.data.token,
+            isLoading: false,
+          });
+          return true;
+        } catch (error) {
+          set({
+            error: error instanceof ApiError ? error.message : '登录失败，请检查网络连接',
+            isLoading: false,
+          });
           return false;
         }
       },
@@ -100,14 +97,20 @@ export const useUserStore = create<UserState>()(
       },
 
       fetchCurrentUser: async () => {
+        const token = get().token;
+        if (!token) {
+          api.clearAuthToken();
+          set({ currentUser: null, isAuthenticated: false, token: null });
+          return;
+        }
+
+        api.setAuthToken(token);
         try {
           const response = await api.get<User>('/auth/me');
-          if (response.code === 0 && response.data) {
-            set({ currentUser: response.data, isAuthenticated: true });
-          }
+          set({ currentUser: response.data, isAuthenticated: true });
         } catch {
-          set({ currentUser: null, isAuthenticated: false, token: null });
           api.clearAuthToken();
+          set({ currentUser: null, isAuthenticated: false, token: null });
         }
       },
 
@@ -115,20 +118,13 @@ export const useUserStore = create<UserState>()(
         const { currentUser } = get();
         if (!currentUser) return false;
 
-        // 先更新本地状态
         set({ currentUser: { ...currentUser, avatarEmoji: avatar } });
 
         try {
           const response = await api.post<User>('/auth/update-avatar', { avatar });
-          if (response.code === 0 && response.data) {
-            set({ currentUser: response.data });
-            return true;
-          }
-          // 如果失败，回滚
-          set({ currentUser });
-          return false;
+          set({ currentUser: response.data });
+          return true;
         } catch {
-          // 如果失败，回滚
           set({ currentUser });
           return false;
         }
@@ -143,12 +139,16 @@ export const useUserStore = create<UserState>()(
         isAuthenticated: state.isAuthenticated,
         token: state.token,
       }),
-      // hydrate 时同步 token 到 api client
       onRehydrateStorage: () => (state) => {
         if (state?.token) {
           api.setAuthToken(state.token);
         }
+        void useUserStore.getState().fetchCurrentUser();
       },
     }
   )
 );
+
+api.onUnauthorized(() => {
+  useUserStore.getState().logout();
+});

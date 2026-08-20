@@ -8,20 +8,20 @@ export const coursesApi = {
     if (filters?.taskGroupId) queryParams.set('taskGroupId', filters.taskGroupId);
     if (filters?.search) queryParams.set('search', filters.search);
 
-    const response = await api.get<Course[]>(`/courses?${queryParams.toString()}`);
-    
-    if (response.code === 0 && response.data) {
+    try {
+      const response = await api.get<Course[]>(`/courses?${queryParams.toString()}`);
       return response.data;
+    } catch {
+      return [];
     }
-    return [];
   },
 
   getById: async (id: string): Promise<Course | null> => {
-    const response = await api.get<Course>(`/courses/${id}`);
-    
-    if (response.code === 0 && response.data) {
+    try {
+      const response = await api.get<Course>(`/courses/${id}`);
       return response.data;
+    } catch {
+      return null;
     }
-    return null;
   },
 };

@@ -94,9 +94,8 @@ export const achievementsApi = {
     queryParams.set('page', params.page.toString());
     queryParams.set('limit', params.limit.toString());
 
-    const response = await api.get<WallResponse>(`/achievements?${queryParams.toString()}`);
-
-    if (response.code === 0 && response.data) {
+    try {
+      const response = await api.get<WallResponse>(`/achievements?${queryParams.toString()}`);
       const achievements: Achievement[] = response.data.data.map((a) => ({
         id: a.id,
         student: a.student,
@@ -115,11 +114,10 @@ export const achievementsApi = {
         createdAt: a.createdAt,
         isLikedByMe: a.isLikedByMe,
       }));
-
       return { data: achievements, total: response.data.total };
+    } catch {
+      return { data: [], total: 0 };
     }
-
-    return { data: [], total: 0 };
   },
 
   create: async (data: {
@@ -134,24 +132,30 @@ export const achievementsApi = {
     courseId?: string;
     courseTitle?: string;
   }): Promise<boolean> => {
-    const response = await api.post('/achievements', data);
-    return response.code === 0;
+    try {
+      await api.post('/achievements', data);
+      return true;
+    } catch {
+      return false;
+    }
   },
 
   like: async (achievementId: string): Promise<{ liked: boolean } | null> => {
-    const response = await api.post<{ liked: boolean }>(`/achievements/${achievementId}/like`);
-    if (response.code === 0 && response.data) {
+    try {
+      const response = await api.post<{ liked: boolean }>(`/achievements/${achievementId}/like`);
       return response.data;
+    } catch {
+      return null;
     }
-    return null;
   },
 
   uploadImage: async (file: File): Promise<string | null> => {
-    const response = await api.upload<{ url: string }>('/achievements/upload', file);
-    if (response.code === 0 && response.data) {
+    try {
+      const response = await api.upload<{ url: string }>('/achievements/upload', file);
       return response.data.url;
+    } catch {
+      return null;
     }
-    return null;
   },
 
   update: async (id: string, data: {
@@ -164,33 +168,47 @@ export const achievementsApi = {
     evalSkill: number;
     evalResult: number;
   }): Promise<boolean> => {
-    const response = await api.put(`/achievements/${id}`, data);
-    return response.code === 0;
+    try {
+      await api.put(`/achievements/${id}`, data);
+      return true;
+    } catch {
+      return false;
+    }
   },
 
   delete: async (id: string): Promise<boolean> => {
-    const response = await api.delete(`/achievements/${id}`);
-    return response.code === 0;
+    try {
+      await api.delete(`/achievements/${id}`);
+      return true;
+    } catch {
+      return false;
+    }
   },
 
   getById: async (id: string): Promise<AchievementDetail | null> => {
-    const response = await api.get<AchievementDetail>(`/achievements/${id}`);
-    if (response.code === 0 && response.data) {
+    try {
+      const response = await api.get<AchievementDetail>(`/achievements/${id}`);
       return response.data;
+    } catch {
+      return null;
     }
-    return null;
   },
 
   evaluate: async (id: string, attitude: number, skill: number, result: number): Promise<boolean> => {
-    const response = await api.post(`/achievements/${id}/evaluate`, { attitude, skill, result });
-    return response.code === 0;
+    try {
+      await api.post(`/achievements/${id}/evaluate`, { attitude, skill, result });
+      return true;
+    } catch {
+      return false;
+    }
   },
 
   aiEvaluate: async (id: string): Promise<AiEvaluationResult | null> => {
-    const response = await api.post<AiEvaluationResult>(`/achievements/${id}/ai-evaluate`);
-    if (response.code === 0 && response.data) {
+    try {
+      const response = await api.post<AiEvaluationResult>(`/achievements/${id}/ai-evaluate`);
       return response.data;
+    } catch {
+      return null;
     }
-    return null;
   },
 };

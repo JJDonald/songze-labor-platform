@@ -1,127 +1,91 @@
-#!/bin/bash
-# =========================================
-# 劳动平台 - Debian 12 部署脚本
-# =========================================
-# 使用方法:
-#   chmod +x deploy.sh
-#   ./deploy.sh
-#
-# 首次部署前请确保:
-#   1. 已安装 Node.js 20+
-#   2. 已复制 .env.example 为 .env 并修改配置
-# =========================================
+#!/usr/bin/env bash
+# 劳动课程平台生产构建脚本
+# 支持：Ubuntu Server 22.04/24.04/26.04 LTS、Debian 11/12/13
 
-set -e
+set -Eeuo pipefail
 
-echo "========================================"
-echo " 劳动平台 - 部署脚本"
-echo "========================================"
+APP_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+SERVER_DIR="$APP_DIR/server"
+ENV_FILE="$SERVER_DIR/.env"
+DATABASE_FILE="$SERVER_DIR/prisma/dev.db"
+BACKUP_DIR="$SERVER_DIR/backups"
 
-# 检查 Node.js 版本
-echo ""
-echo "📋 检查 Node.js..."
-if ! command -v node &> /dev/null; then
-    echo "❌ 未找到 Node.js，请先安装"
-    echo "   安装方式:"
-    echo "   curl -fsSL https://deb.nodesource.com/setup_20.x | sudo bash -"
-    echo "   sudo apt-get install -y nodejs"
+log() {
+    printf '\n[%s] %s\n' "$(date '+%H:%M:%S')" "$1"
+}
+
+fail() {
+    printf '\n错误：%s\n' "$1" >&2
     exit 1
+}
+
+[[ -r /etc/os-release ]] || fail "无法识别操作系统，仅支持 Ubuntu 和 Debian。"
+# shellcheck disable=SC1091
+source /etc/os-release
+
+case "${ID:-}" in
+    ubuntu)
+        case "${VERSION_ID:-}" in
+            22.04|24.04|26.04) ;;
+            *) fail "当前 Ubuntu ${VERSION_ID:-未知} 不在支持列表中，请使用 Ubuntu Server 22.04、24.04 或 26.04 LTS。" ;;
+        esac
+        ;;
+    debian)
+        case "${VERSION_ID:-}" in
+            11|12|13) ;;
+            *) fail "当前 Debian ${VERSION_ID:-未知} 不在支持列表中，请使用 Debian 11、12 或 13。" ;;
+        esac
+        ;;
+    *)
+        fail "当前系统 ${PRETTY_NAME:-未知} 不受支持，请使用 Ubuntu Server 22.04/24.04/26.04 LTS 或 Debian 11/12/13。"
+        ;;
+esac
+
+printf '%s\n' "========================================"
+printf '%s\n' " 劳动课程平台 - 生产构建"
+printf '%s\n' " 系统：${PRETTY_NAME}"
+printf '%s\n' "========================================"
+
+command -v node >/dev/null 2>&1 || fail "未找到 Node.js。请先安装 Node.js 24 LTS。"
+command -v npm >/dev/null 2>&1 || fail "未找到 npm。请先安装 Node.js 24 LTS。"
+
+NODE_MAJOR="$(node -p "process.versions.node.split('.')[0]")"
+[[ "$NODE_MAJOR" -ge 20 ]] || fail "Node.js 版本过低：$(node -v)，需要 20 以上，推荐 24 LTS。"
+
+[[ -f "$ENV_FILE" ]] || fail "缺少 $ENV_FILE。请先复制 server/.env.example 为 server/.env，并设置 JWT_SECRET、CORS_ORIGINS 等生产配置。"
+
+if grep -Eq '^JWT_SECRET=(your-|labor-platform-secret-key-2026|$)' "$ENV_FILE"; then
+    fail "server/.env 中仍是示例或空的 JWT_SECRET，请先替换为强随机密钥。"
 fi
 
-NODE_VERSION=$(node -v | cut -d'v' -f2 | cut -d'.' -f1)
-if [ "$NODE_VERSION" -lt 20 ]; then
-    echo "❌ Node.js 版本过低 (当前: $(node -v), 需要: >= 20)"
-    echo "   请升级 Node.js"
-    exit 1
+log "安装 Ubuntu/Debian 系统依赖"
+sudo apt-get update
+sudo apt-get install -y nginx sqlite3 certbot python3-certbot-nginx ca-certificates curl
+
+log "安装并构建后端"
+npm --prefix "$SERVER_DIR" ci --include=dev
+npm --prefix "$SERVER_DIR" run db:generate
+
+if [[ -f "$DATABASE_FILE" ]]; then
+    mkdir -p "$BACKUP_DIR"
+    BACKUP_FILE="$BACKUP_DIR/dev-$(date '+%Y%m%d-%H%M%S').db"
+    cp "$DATABASE_FILE" "$BACKUP_FILE"
+    printf '数据库备份：%s\n' "$BACKUP_FILE"
 fi
 
-echo "✅ Node.js $(node -v) 已安装"
+DATABASE_URL="file:./dev.db" npm --prefix "$SERVER_DIR" exec prisma migrate deploy -- --schema "$SERVER_DIR/prisma/schema.prisma"
+npm --prefix "$SERVER_DIR" run build
+mkdir -p "$SERVER_DIR/uploads" "$SERVER_DIR/logs"
 
-# 检查 npm
-if ! command -v npm &> /dev/null; then
-    echo "❌ 未找到 npm"
-    exit 1
-fi
+log "安装并构建前端"
+npm --prefix "$APP_DIR" ci
+VITE_API_URL="${VITE_API_URL:-/api}" npm --prefix "$APP_DIR" run build
 
-# 安装系统依赖
-echo ""
-echo "📦 安装系统依赖..."
-sudo apt-get update -qq
-sudo apt-get install -y -qq libsqlite3-dev nginx certbot python3-certbot-nginx > /dev/null 2>&1 || true
-echo "✅ 系统依赖安装完成"
+log "检查 Nginx 服务"
+sudo systemctl enable --now nginx
 
-# 安装 SQLite 支持
-echo ""
-echo "🗄️ 检查 SQLite..."
-if command -v sqlite3 &> /dev/null; then
-    echo "✅ SQLite $(sqlite3 --version) 已安装"
-else
-    echo "⚠️  SQLite 命令行未安装（可选）"
-fi
-
-# 后端部署
-echo ""
-echo "🔧 部署后端..."
-cd "$(dirname "$0")/server"
-
-# 安装后端依赖
-echo "   📥 安装依赖..."
-npm install --include=dev
-
-# 生成 Prisma Client
-echo "   🔗 生成 Prisma Client..."
-npm run db:generate
-
-# 初始化数据库
-if [ ! -f "prisma/dev.db" ]; then
-    echo "   🗄️ 初始化数据库..."
-    npx prisma db push
-    echo "   📊 灌入测试数据..."
-    npm run db:seed
-else
-    echo "   ✅ 数据库存在，跳过初始化"
-    echo "   🔗 同步数据库结构..."
-    npx prisma db push
-fi
-
-# 构建后端
-echo "   🔨 构建后端..."
-rm -rf dist/
-npm run build
-
-# 确保 uploads 目录存在
-mkdir -p uploads
-echo "   📁 uploads 目录已就绪"
-
-# 前端部署
-echo ""
-echo "🎨 部署前端..."
-cd ../labor-platform
-
-# 安装前端依赖
-echo "   📥 安装依赖..."
-npm install
-
-# 构建前端（生产模式）
-echo "   🔨 构建前端..."
-npm run build
-
-echo ""
-echo "========================================"
-echo " ✅ 部署完成！"
-echo "========================================"
-echo ""
-echo "启动后端服务:"
-echo "   cd server"
-echo "   NODE_ENV=production npm start"
-echo "   # 或使用 PM2:"
-echo "   pm2 start dist/index.js --name labor-api"
-echo ""
-echo "配置 Nginx:"
-echo "   sudo cp nginx.conf /etc/nginx/sites-available/labor-platform"
-echo "   sudo nano /etc/nginx/sites-available/labor-platform  # 修改域名"
-echo "   sudo ln -s /etc/nginx/sites-available/labor-platform /etc/nginx/sites-enabled/"
-echo "   sudo nginx -t && sudo systemctl reload nginx"
-echo ""
-echo "配置 HTTPS:"
-echo "   sudo certbot --nginx -d yourdomain.com"
+printf '\n%s\n' "构建完成。后续操作："
+printf '%s\n' "1. 修改 nginx.conf 中的域名和项目绝对路径，然后复制到 /etc/nginx/sites-available/labor-platform。"
+printf '%s\n' "2. 启用站点并执行：sudo nginx -t && sudo systemctl reload nginx"
+printf '%s\n' "3. 在 $APP_DIR 安装 PM2 后执行：pm2 start ecosystem.config.cjs && pm2 save"
+printf '%s\n' "4. 配置 HTTPS：sudo certbot --nginx -d yourdomain.com"

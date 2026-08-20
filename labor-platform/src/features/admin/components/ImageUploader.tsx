@@ -1,4 +1,4 @@
-import { useState, useRef } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { adminApi } from '../api/adminApi';
 import { API_ORIGIN } from '@/lib/api';
 
@@ -12,6 +12,14 @@ export const ImageUploader = ({ value, onChange, className = '' }: ImageUploader
   const [uploading, setUploading] = useState(false);
   const [preview, setPreview] = useState<string | null>(value || null);
   const inputRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    if (!value) {
+      setPreview(null);
+      return;
+    }
+    setPreview(value.startsWith('http') || value.startsWith('data:') ? value : `${API_ORIGIN}${value}`);
+  }, [value]);
 
   const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -28,12 +36,9 @@ export const ImageUploader = ({ value, onChange, className = '' }: ImageUploader
     setUploading(true);
     try {
       const response = await adminApi.uploadImage(file);
-      if (response.code === 0 && response.data) {
-        // Use full URL for display
-        const imageUrl = `${API_ORIGIN}${response.data.url}`;
-        onChange(response.data.url);
-        setPreview(imageUrl);
-      }
+      const imageUrl = `${API_ORIGIN}${response.data.url}`;
+      onChange(response.data.url);
+      setPreview(imageUrl);
     } catch {
       console.error('Upload failed');
       alert('上传失败，请重试');

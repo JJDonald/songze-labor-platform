@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useQueryClient } from '@tanstack/react-query';
 import { Avatar, Stars } from '@/features/shared/components/ui';
 import type { Achievement } from '../types';
 import { LikeButton } from './LikeButton';
@@ -11,13 +12,14 @@ interface AchievementCardProps {
 
 export const AchievementCard = ({ achievement }: AchievementCardProps) => {
   const [showEvalModal, setShowEvalModal] = useState(false);
+  const queryClient = useQueryClient();
 
   const hasRealImage = (images: string[]) => {
     return images.length > 0 && images[0].startsWith('/uploads');
   };
 
   const handleEvalSuccess = () => {
-    // 成功后刷新数据
+    queryClient.invalidateQueries({ queryKey: ['achievements'] });
   };
   
   return (

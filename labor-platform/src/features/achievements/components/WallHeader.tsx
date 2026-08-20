@@ -17,22 +17,22 @@ const taskGroups = [
 
 export const WallHeader = ({ onFilterChange, activeFilter }: WallHeaderProps) => {
   return (
-    <div className="bg-gradient-to-br from-brand-orange to-brand-orange-light py-10 px-6">
+    <div className="bg-gradient-to-br from-brand-orange to-brand-orange-light px-4 py-8 sm:px-6 sm:py-10">
       <Container>
-        <h1 className="font-display text-4xl text-white mb-2">🎨 成果展示墙</h1>
-        <p className="text-white/80 text-base mb-5">
+        <h1 className="mb-2 font-display text-3xl text-white sm:text-4xl">🎨 成果展示墙</h1>
+        <p className="mb-4 text-sm text-white/80 sm:mb-5 sm:text-base">
           同学们的劳动成果都在这里，快来为大家点赞吧！
         </p>
 
-        <div className="flex gap-2 flex-wrap">
+        <div className="-mx-1 flex gap-2 overflow-x-auto px-1 pb-1 sm:flex-wrap sm:overflow-visible">
           {taskGroups.map((tg) => (
             <button
               key={tg.id}
               onClick={() => onFilterChange(tg.id === 'all' ? undefined : tg.id)}
-              className={`px-4 py-1.5 rounded-full text-sm font-semibold transition-all cursor-pointer ${
+              className={`shrink-0 cursor-pointer rounded-full px-3 py-1.5 text-sm font-semibold transition-all sm:px-4 ${
                 (activeFilter === tg.id || (tg.id === 'all' && !activeFilter))
-                  ? 'bg-white text-brand-orange border-white'
-                  : 'bg-white/15 text-white/85 border-white/40 border-2 hover:bg-white hover:text-brand-orange'
+                  ? 'border-white bg-white text-brand-orange'
+                  : 'border-2 border-white/40 bg-white/15 text-white/85 hover:bg-white hover:text-brand-orange'
               }`}
             >
               {tg.icon} {tg.name}

@@ -36,22 +36,22 @@ export const CourseFilter = ({
   const [showFilters, setShowFilters] = useState(false);
 
   return (
-    <div className="bg-white rounded-2xl p-4 shadow-sm">
-      <div className="flex items-center gap-4">
-        <div className="flex-1">
+    <div className="rounded-2xl bg-white p-3 shadow-sm sm:p-4">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:gap-4">
+        <div className="min-w-0 flex-1">
           <input
             type="text"
             placeholder="搜索课程..."
             value={search || ''}
             onChange={(e) => onSearchChange(e.target.value)}
-            className="w-full px-4 py-2 rounded-lg border border-gray-200 focus:outline-none focus:ring-2 focus:ring-brand-green/20"
+            className="w-full rounded-lg border border-gray-200 px-4 py-2.5 focus:outline-none focus:ring-2 focus:ring-brand-green/20"
           />
         </div>
         
         <button
           onClick={() => setShowFilters(!showFilters)}
           className={cn(
-            'px-4 py-2 rounded-lg font-medium text-sm transition-colors',
+            'rounded-lg px-4 py-2.5 text-sm font-medium transition-colors sm:shrink-0',
             showFilters ? 'bg-brand-green text-white' : 'bg-gray-100 text-text-soft hover:bg-gray-200'
           )}
         >

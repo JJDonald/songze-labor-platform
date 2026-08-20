@@ -16,6 +16,7 @@ export const AdminAchievements = () => {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['admin', 'achievements'] });
     },
+    onError: (err) => alert(err instanceof Error ? err.message : '更新失败'),
   });
 
   const deleteMutation = useMutation({
@@ -23,6 +24,7 @@ export const AdminAchievements = () => {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['admin', 'achievements'] });
     },
+    onError: (err) => alert(err instanceof Error ? err.message : '删除失败'),
   });
 
   const achievements = achievementsData?.data || [];
@@ -45,11 +47,11 @@ export const AdminAchievements = () => {
   }
 
   return (
-    <div className="min-h-screen bg-brand-cream py-8">
-      <div className="max-w-6xl mx-auto px-6">
-        <h1 className="text-3xl font-bold mb-6">🏆 成果管理</h1>
+    <div className="min-h-screen bg-brand-cream py-6 sm:py-8">
+      <div className="mx-auto max-w-6xl px-4 sm:px-6">
+        <h1 className="mb-6 text-2xl font-bold sm:text-3xl">🏆 成果管理</h1>
 
-        <div className="bg-white rounded-xl shadow-sm overflow-hidden">
+        <div className="table-scroll overflow-hidden rounded-xl bg-white shadow-sm">
           <table className="w-full">
             <thead className="bg-gray-50">
               <tr>

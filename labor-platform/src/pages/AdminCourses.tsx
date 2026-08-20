@@ -10,6 +10,7 @@ export const AdminCourses = () => {
   const queryClient = useQueryClient();
   const [showModal, setShowModal] = useState(false);
   const [editingCourse, setEditingCourse] = useState<AdminCourse | null>(null);
+  const [error, setError] = useState('');
   
   const [formData, setFormData] = useState({
     title: '',
@@ -49,6 +50,7 @@ export const AdminCourses = () => {
       queryClient.invalidateQueries({ queryKey: ['admin', 'courses'] });
       closeModal();
     },
+    onError: (err) => setError(err instanceof Error ? err.message : '创建失败'),
   });
 
   const updateMutation = useMutation({
@@ -58,6 +60,7 @@ export const AdminCourses = () => {
       queryClient.invalidateQueries({ queryKey: ['admin', 'courses'] });
       closeModal();
     },
+    onError: (err) => setError(err instanceof Error ? err.message : '更新失败'),
   });
 
   const deleteMutation = useMutation({
@@ -65,6 +68,7 @@ export const AdminCourses = () => {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['admin', 'courses'] });
     },
+    onError: (err) => alert(err instanceof Error ? err.message : '删除失败'),
   });
 
   const courses = coursesData?.data || [];
@@ -72,6 +76,7 @@ export const AdminCourses = () => {
   const grades = gradesData?.data || [];
 
   const openCreateModal = () => {
+    setError('');
     setEditingCourse(null);
     setFormData({
       title: '',
@@ -93,6 +98,7 @@ export const AdminCourses = () => {
   };
 
   const openEditModal = (course: AdminCourse) => {
+    setError('');
     setEditingCourse(course);
     let objectives: string[] = [];
     let materials: string[] = [];
@@ -133,6 +139,7 @@ export const AdminCourses = () => {
   const closeModal = () => {
     setShowModal(false);
     setEditingCourse(null);
+    setError('');
   };
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -183,19 +190,19 @@ export const AdminCourses = () => {
   }
 
   return (
-    <div className="min-h-screen bg-brand-cream py-8">
-      <div className="max-w-6xl mx-auto px-6">
-        <div className="flex justify-between items-center mb-6">
-          <h1 className="text-3xl font-bold">📚 课程管理</h1>
+    <div className="min-h-screen bg-brand-cream py-6 sm:py-8">
+      <div className="mx-auto max-w-6xl px-4 sm:px-6">
+        <div className="mb-6 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+          <h1 className="text-2xl font-bold sm:text-3xl">📚 课程管理</h1>
           <button
             onClick={openCreateModal}
-            className="bg-brand-green text-white px-6 py-2 rounded-lg hover:bg-brand-green-light"
+            className="rounded-lg bg-brand-green px-5 py-2.5 text-white hover:bg-brand-green-light sm:px-6"
           >
             + 添加课程
           </button>
         </div>
 
-        <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
           {courses.map((course) => (
             <div key={course.id} className="bg-white rounded-xl shadow-sm overflow-hidden">
               <div
@@ -245,11 +252,12 @@ export const AdminCourses = () => {
 
       {/* Modal */}
       {showModal && (
-        <div className="fixed inset-0 bg-black/50 flex items-start justify-center z-50 overflow-y-auto py-8">
-          <div className="bg-white rounded-xl p-6 w-full max-w-3xl my-8">
-            <h2 className="text-xl font-bold mb-4">{editingCourse ? '编辑课程' : '添加课程'}</h2>
+        <div className="fixed inset-0 z-50 flex items-end justify-center overflow-y-auto bg-black/50 py-0 sm:items-start sm:py-8">
+          <div className="my-0 max-h-[92dvh] w-full max-w-3xl overflow-y-auto rounded-t-2xl bg-white p-4 safe-bottom sm:my-8 sm:rounded-xl sm:p-6">
+            <h2 className="mb-4 text-xl font-bold">{editingCourse ? '编辑课程' : '添加课程'}</h2>
             <form onSubmit={handleSubmit}>
-              <div className="space-y-4 max-h-[70vh] overflow-y-auto pr-2">
+              {error && <div className="mb-4 rounded-lg bg-red-50 px-3 py-2 text-sm text-red-600">{error}</div>}
+              <div className="max-h-[70vh] space-y-4 overflow-y-auto pr-1 sm:pr-2">
                 {/* 基本信息 */}
                 <div className="grid md:grid-cols-2 gap-4">
                   <div>

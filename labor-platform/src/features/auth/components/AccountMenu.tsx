@@ -61,11 +61,11 @@ export const AccountMenu = () => {
       <div className="relative">
         <button
           onClick={() => setShowMenu(!showMenu)}
-          className="flex items-center gap-2 px-3 py-1.5 rounded-full hover:bg-brand-green-pale transition-all cursor-pointer"
+          className="flex cursor-pointer items-center gap-1.5 rounded-full px-2 py-1.5 transition-all hover:bg-brand-green-pale sm:gap-2 sm:px-3"
         >
-          <span className="text-2xl">{currentUser.avatarEmoji}</span>
-          <span className="text-sm font-semibold">{currentUser.nickname}</span>
-          <span className="text-text-muted text-xs">▼</span>
+          <span className="text-xl sm:text-2xl">{currentUser.avatarEmoji}</span>
+          <span className="hidden max-w-[7rem] truncate text-sm font-semibold sm:inline">{currentUser.nickname}</span>
+          <span className="text-xs text-text-muted">▼</span>
         </button>
 
         {showMenu && (

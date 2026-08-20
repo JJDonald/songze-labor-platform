@@ -13,7 +13,9 @@ export interface Achievement {
   };
   title: string;
   description: string;
+  reflection?: string;
   images: string[];
+  isPublic?: boolean;
   evalAttitude: number;
   evalSkill: number;
   evalResult: number;

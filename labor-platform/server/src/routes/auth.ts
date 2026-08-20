@@ -4,25 +4,75 @@ import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 import { v4 as uuidv4 } from 'uuid';
 import { JWT_SECRET } from '../config.js';
+import { authenticate, rateLimit, type AuthRequest } from '../middleware/admin.js';
+import { assertPasswordStrength } from '../utils.js';
 
 const router = Router();
 
-const DEFAULT_PASSWORD = '123456';
+const signToken = (student: { id: string; studentId: string }) =>
+  jwt.sign(
+    { studentId: student.id, studentIdNumber: student.studentId },
+    JWT_SECRET,
+    { expiresIn: '7d' }
+  );
 
-router.post('/register', async (req, res) => {
+const publicStudent = (student: {
+  id: string;
+  studentId: string;
+  nickname: string;
+  avatarEmoji: string;
+  gradeId: number;
+  classCode: string;
+  role: string;
+  totalAchievements?: number;
+  totalLikes?: number;
+}) => ({
+  id: student.id,
+  studentId: student.studentId,
+  nickname: student.nickname,
+  avatarEmoji: student.avatarEmoji,
+  gradeId: student.gradeId,
+  classCode: student.classCode,
+  role: student.role,
+  totalAchievements: student.totalAchievements,
+  totalLikes: student.totalLikes,
+});
+
+router.post('/register', rateLimit('register', 8, 15 * 60 * 1000), async (req, res) => {
   try {
-    const { studentId, nickname, gradeId, classCode } = req.body;
+    const { studentId, nickname, gradeId, classCode, password } = req.body;
 
-    if (!studentId || !nickname || !gradeId || !classCode) {
+    if (!studentId || !nickname || !gradeId || !classCode || !password) {
       return res.status(400).json({
         code: 400,
-        message: '请填写完整信息',
+        message: '请填写完整信息，并设置登录密码',
+        data: null,
+      });
+    }
+
+    try {
+      assertPasswordStrength(String(password));
+    } catch (error) {
+      return res.status(400).json({
+        code: 400,
+        message: error instanceof Error ? error.message : '密码不符合要求',
+        data: null,
+      });
+    }
+
+    const grade = await prisma.grade.findUnique({
+      where: { id: parseInt(String(gradeId), 10) },
+    });
+    if (!grade) {
+      return res.status(400).json({
+        code: 400,
+        message: '年级不存在',
         data: null,
       });
     }
 
     const existingStudent = await prisma.student.findUnique({
-      where: { studentId },
+      where: { studentId: String(studentId).trim() },
     });
 
     if (existingStudent) {
@@ -33,39 +83,24 @@ router.post('/register', async (req, res) => {
       });
     }
 
-    const hashedPassword = await bcrypt.hash(DEFAULT_PASSWORD, 10);
-
+    const hashedPassword = await bcrypt.hash(String(password), 10);
     const student = await prisma.student.create({
       data: {
         id: uuidv4(),
-        studentId,
+        studentId: String(studentId).trim(),
         password: hashedPassword,
-        nickname,
-        gradeId: parseInt(gradeId),
-        classCode,
+        nickname: String(nickname).trim(),
+        gradeId: grade.id,
+        classCode: String(classCode).trim(),
       },
     });
-
-    const token = jwt.sign(
-      { studentId: student.id, studentIdNumber: student.studentId },
-      JWT_SECRET as string,
-      { expiresIn: '7d' }
-    );
 
     res.json({
       code: 0,
       message: '注册成功',
       data: {
-        token,
-        student: {
-          id: student.id,
-          studentId: student.studentId,
-          nickname: student.nickname,
-          avatarEmoji: student.avatarEmoji,
-          gradeId: student.gradeId,
-          classCode: student.classCode,
-          role: student.role,
-        },
+        token: signToken(student),
+        student: publicStudent(student),
       },
     });
   } catch (error) {
@@ -78,7 +113,7 @@ router.post('/register', async (req, res) => {
   }
 });
 
-router.post('/login', async (req, res) => {
+router.post('/login', rateLimit('login', 10, 15 * 60 * 1000), async (req, res) => {
   try {
     const { studentId, password } = req.body;
 
@@ -103,7 +138,6 @@ router.post('/login', async (req, res) => {
     }
 
     const isValidPassword = await bcrypt.compare(password, student.password);
-
     if (!isValidPassword) {
       return res.status(401).json({
         code: 401,
@@ -112,26 +146,12 @@ router.post('/login', async (req, res) => {
       });
     }
 
-    const token = jwt.sign(
-      { studentId: student.id, studentIdNumber: student.studentId },
-      JWT_SECRET as string,
-      { expiresIn: '7d' }
-    );
-
     res.json({
       code: 0,
       message: '登录成功',
       data: {
-        token,
-        student: {
-          id: student.id,
-          studentId: student.studentId,
-          nickname: student.nickname,
-          avatarEmoji: student.avatarEmoji,
-          gradeId: student.gradeId,
-          classCode: student.classCode,
-          role: student.role,
-        },
+        token: signToken(student),
+        student: publicStudent(student),
       },
     });
   } catch (error) {
@@ -144,73 +164,19 @@ router.post('/login', async (req, res) => {
   }
 });
 
-router.get('/me', async (req, res) => {
-  try {
-    const authHeader = req.headers.authorization;
-    if (!authHeader || !authHeader.startsWith('Bearer ')) {
-      return res.status(401).json({
-        code: 401,
-        message: '未登录',
-        data: null,
-      });
-    }
-
-    const token = authHeader.substring(7);
-    const decoded = jwt.verify(token, JWT_SECRET as string) as unknown as { studentId: string };
-
-    const student = await prisma.student.findUnique({
-      where: { id: decoded.studentId },
-    });
-
-    if (!student) {
-      return res.status(401).json({
-        code: 401,
-        message: '用户不存在',
-        data: null,
-      });
-    }
-
-    res.json({
-      code: 0,
-      message: 'success',
-      data: {
-        id: student.id,
-        studentId: student.studentId,
-        nickname: student.nickname,
-        avatarEmoji: student.avatarEmoji,
-        gradeId: student.gradeId,
-        classCode: student.classCode,
-        totalAchievements: student.totalAchievements,
-        totalLikes: student.totalLikes,
-        role: student.role,
-      },
-    });
-  } catch (error) {
-    console.error('Get me error:', error);
-    res.status(401).json({
-      code: 401,
-      message: '登录已过期，请重新登录',
-      data: null,
-    });
-  }
+router.get('/me', authenticate, async (req: AuthRequest, res) => {
+  const student = req.student!;
+  res.json({
+    code: 0,
+    message: 'success',
+    data: publicStudent(student),
+  });
 });
 
-router.post('/update-avatar', async (req, res) => {
+router.post('/update-avatar', authenticate, async (req: AuthRequest, res) => {
   try {
-    const authHeader = req.headers.authorization;
-    if (!authHeader || !authHeader.startsWith('Bearer ')) {
-      return res.status(401).json({
-        code: 401,
-        message: '未登录',
-        data: null,
-      });
-    }
-
-    const token = authHeader.substring(7);
-    const decoded = jwt.verify(token, JWT_SECRET as string) as unknown as { studentId: string };
-
     const { avatar } = req.body;
-    if (!avatar) {
+    if (!avatar || typeof avatar !== 'string') {
       return res.status(400).json({
         code: 400,
         message: '请选择头像',
@@ -219,22 +185,14 @@ router.post('/update-avatar', async (req, res) => {
     }
 
     const student = await prisma.student.update({
-      where: { id: decoded.studentId },
-      data: { avatarEmoji: avatar },
+      where: { id: req.student!.id },
+      data: { avatarEmoji: avatar.slice(0, 8) },
     });
 
     res.json({
       code: 0,
       message: '头像修改成功',
-      data: {
-        id: student.id,
-        studentId: student.studentId,
-        nickname: student.nickname,
-        avatarEmoji: student.avatarEmoji,
-        gradeId: student.gradeId,
-        classCode: student.classCode,
-        role: student.role,
-      },
+      data: publicStudent(student),
     });
   } catch (error) {
     console.error('Update avatar error:', error);
@@ -246,20 +204,8 @@ router.post('/update-avatar', async (req, res) => {
   }
 });
 
-router.post('/change-password', async (req, res) => {
+router.post('/change-password', authenticate, async (req: AuthRequest, res) => {
   try {
-    const authHeader = req.headers.authorization;
-    if (!authHeader || !authHeader.startsWith('Bearer ')) {
-      return res.status(401).json({
-        code: 401,
-        message: '未登录',
-        data: null,
-      });
-    }
-
-    const token = authHeader.substring(7);
-    const decoded = jwt.verify(token, JWT_SECRET as string) as unknown as { studentId: string };
-
     const { oldPassword, newPassword } = req.body;
     if (!oldPassword || !newPassword) {
       return res.status(400).json({
@@ -269,16 +215,18 @@ router.post('/change-password', async (req, res) => {
       });
     }
 
-    if (newPassword.length < 6) {
+    try {
+      assertPasswordStrength(String(newPassword));
+    } catch (error) {
       return res.status(400).json({
         code: 400,
-        message: '密码长度至少6位',
+        message: error instanceof Error ? error.message : '密码不符合要求',
         data: null,
       });
     }
 
     const student = await prisma.student.findUnique({
-      where: { id: decoded.studentId },
+      where: { id: req.student!.id },
     });
 
     if (!student) {
@@ -298,9 +246,9 @@ router.post('/change-password', async (req, res) => {
       });
     }
 
-    const hashedPassword = await bcrypt.hash(newPassword, 10);
+    const hashedPassword = await bcrypt.hash(String(newPassword), 10);
     await prisma.student.update({
-      where: { id: decoded.studentId },
+      where: { id: student.id },
       data: { password: hashedPassword },
     });
 

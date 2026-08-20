@@ -1,4 +1,5 @@
 import { useState, useEffect, useMemo } from 'react';
+import { useLocation } from 'react-router-dom';
 import { useCourses } from '@/features/courses/hooks/useCourses';
 import { CourseCard } from '@/features/courses/components/CourseCard';
 import { CourseDetail } from '@/features/courses/components/CourseDetail';
@@ -19,12 +20,22 @@ interface TaskGroup {
 }
 
 export const CoursesPage = () => {
+  const location = useLocation();
   const [filters, setFilters] = useState<CourseFilters>({});
   const [selectedCourse, setSelectedCourse] = useState<Course | null>(null);
   const [grades, setGrades] = useState<Grade[]>([]);
   const [taskGroups, setTaskGroups] = useState<TaskGroup[]>([]);
 
   const { data: courses = [], isLoading } = useCourses(filters);
+
+  useEffect(() => {
+    const courseId = (location.state as { courseId?: string } | null)?.courseId;
+    if (!courseId || courses.length === 0) return;
+    const matched = courses.find((course) => course.id === courseId);
+    if (matched) {
+      setSelectedCourse(matched);
+    }
+  }, [courses, location.state]);
 
   useEffect(() => {
     const fetchFilters = async () => {
@@ -34,12 +45,8 @@ export const CoursesPage = () => {
           api.get<TaskGroup[]>('/courses/task-groups'),
         ]);
         
-        if (gradesRes.code === 0 && gradesRes.data) {
-          setGrades(gradesRes.data);
-        }
-        if (taskGroupsRes.code === 0 && taskGroupsRes.data) {
-          setTaskGroups(taskGroupsRes.data);
-        }
+        setGrades(gradesRes.data);
+        setTaskGroups(taskGroupsRes.data);
       } catch {
         console.error('Failed to fetch filters');
       }

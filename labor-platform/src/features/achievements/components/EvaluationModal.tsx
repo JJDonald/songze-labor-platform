@@ -176,13 +176,13 @@ export const EvaluationModal = ({ isOpen, achievementId, onClose, onSuccess }: E
     return images.length > 0 && images[0].startsWith('/uploads');
   };
 
-  if (!achievement) return null;
+  if (!isOpen) return null;
 
   return (
-    <Modal isOpen={isOpen} onClose={onClose} title={achievement.title}>
-      {isLoading ? (
+    <Modal isOpen={isOpen} onClose={onClose} title={achievement?.title || '成果评价'}>
+      {isLoading || !achievement ? (
         <div className="text-center py-8">
-          <div className="text-2xl">加载中...</div>
+          <div className="text-2xl">{isLoading ? '加载中...' : '成果不存在或无权查看'}</div>
         </div>
       ) : (
         <div className="space-y-4">

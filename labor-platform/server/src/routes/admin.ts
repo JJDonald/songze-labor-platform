@@ -4,6 +4,13 @@ import bcrypt from 'bcryptjs';
 import { v4 as uuidv4 } from 'uuid';
 import { authenticate, requireAdmin, AuthRequest } from '../middleware/admin.js';
 import { DEFAULT_EVALUATION_DIMENSIONS, ensureEvaluationDimensions } from '../services/evaluationDimensions.js';
+import {
+  getAiPublicSettings,
+  testAiConnection,
+  updateAiSettings,
+  type UpdateAiSettingsInput,
+} from '../services/aiSettings.js';
+import { assertPasswordStrength } from '../utils.js';
 
 const router = Router();
 
@@ -55,10 +62,20 @@ router.post('/users', async (req: AuthRequest, res) => {
   try {
     const { studentId, password, nickname, gradeId, classCode, role } = req.body;
 
-    if (!studentId || !nickname || !gradeId || !classCode) {
+    if (!studentId || !nickname || !gradeId || !classCode || !password) {
       return res.status(400).json({
         code: 400,
-        message: '请填写完整信息',
+        message: '请填写完整信息，并设置登录密码',
+        data: null,
+      });
+    }
+
+    try {
+      assertPasswordStrength(String(password));
+    } catch (error) {
+      return res.status(400).json({
+        code: 400,
+        message: error instanceof Error ? error.message : '密码不符合要求',
         data: null,
       });
     }
@@ -75,17 +92,18 @@ router.post('/users', async (req: AuthRequest, res) => {
       });
     }
 
-    const hashedPassword = await bcrypt.hash(password || '123456', 10);
+    const hashedPassword = await bcrypt.hash(String(password), 10);
+    const nextRole = role === 'ADMIN' ? 'ADMIN' : 'STUDENT';
 
     const user = await prisma.student.create({
       data: {
         id: uuidv4(),
-        studentId,
+        studentId: String(studentId).trim(),
         password: hashedPassword,
-        nickname,
-        gradeId: parseInt(gradeId),
-        classCode,
-        role: role || 'STUDENT',
+        nickname: String(nickname).trim(),
+        gradeId: parseInt(gradeId, 10),
+        classCode: String(classCode).trim(),
+        role: nextRole,
       },
     });
 
@@ -114,13 +132,50 @@ router.put('/users/:id', async (req: AuthRequest, res) => {
   try {
     const { id } = req.params;
     const { nickname, password, classCode, role } = req.body;
+    const existing = await prisma.student.findUnique({ where: { id } });
+    if (!existing) {
+      return res.status(404).json({
+        code: 404,
+        message: '用户不存在',
+        data: null,
+      });
+    }
 
-    const updateData: any = {};
-    if (nickname) updateData.nickname = nickname;
-    if (classCode) updateData.classCode = classCode;
-    if (role) updateData.role = role;
+    const updateData: { nickname?: string; classCode?: string; role?: 'STUDENT' | 'ADMIN'; password?: string } = {};
+    if (nickname) updateData.nickname = String(nickname).trim();
+    if (classCode) updateData.classCode = String(classCode).trim();
+    if (role) {
+      const nextRole = role === 'ADMIN' ? 'ADMIN' : role === 'STUDENT' ? 'STUDENT' : null;
+      if (!nextRole) {
+        return res.status(400).json({
+          code: 400,
+          message: '角色无效',
+          data: null,
+        });
+      }
+      if (existing.role === 'ADMIN' && nextRole !== 'ADMIN') {
+        const adminCount = await prisma.student.count({ where: { role: 'ADMIN' } });
+        if (adminCount <= 1) {
+          return res.status(400).json({
+            code: 400,
+            message: '不能取消最后一个管理员',
+            data: null,
+          });
+        }
+      }
+      updateData.role = nextRole;
+    }
     if (password) {
-      updateData.password = await bcrypt.hash(password, 10);
+      try {
+        assertPasswordStrength(String(password));
+      } catch (error) {
+        return res.status(400).json({
+          code: 400,
+          message: error instanceof Error ? error.message : '密码不符合要求',
+          data: null,
+        });
+      }
+      updateData.password = await bcrypt.hash(String(password), 10);
     }
 
     const user = await prisma.student.update({
@@ -152,6 +207,33 @@ router.put('/users/:id', async (req: AuthRequest, res) => {
 router.delete('/users/:id', async (req: AuthRequest, res) => {
   try {
     const { id } = req.params;
+    if (req.user?.id === id) {
+      return res.status(400).json({
+        code: 400,
+        message: '不能删除自己的账户',
+        data: null,
+      });
+    }
+
+    const existing = await prisma.student.findUnique({ where: { id } });
+    if (!existing) {
+      return res.status(404).json({
+        code: 404,
+        message: '用户不存在',
+        data: null,
+      });
+    }
+
+    if (existing.role === 'ADMIN') {
+      const adminCount = await prisma.student.count({ where: { role: 'ADMIN' } });
+      if (adminCount <= 1) {
+        return res.status(400).json({
+          code: 400,
+          message: '不能删除最后一个管理员',
+          data: null,
+        });
+      }
+    }
 
     await prisma.student.delete({
       where: { id },
@@ -390,9 +472,24 @@ router.put('/achievements/:id', async (req: AuthRequest, res) => {
 router.delete('/achievements/:id', async (req: AuthRequest, res) => {
   try {
     const { id } = req.params;
+    const achievement = await prisma.achievement.findUnique({ where: { id } });
+    if (!achievement) {
+      return res.status(404).json({
+        code: 404,
+        message: '成果不存在',
+        data: null,
+      });
+    }
 
-    await prisma.achievement.delete({
-      where: { id },
+    await prisma.$transaction(async (tx) => {
+      await tx.achievement.delete({ where: { id } });
+      await tx.student.update({
+        where: { id: achievement.studentId },
+        data: {
+          totalAchievements: { decrement: 1 },
+          totalLikes: { decrement: achievement.likesCount },
+        },
+      });
     });
 
     res.json({
@@ -639,6 +736,94 @@ router.post('/evaluation-dimensions/reset', async (req: AuthRequest, res) => {
     res.status(500).json({
       code: 500,
       message: '恢复默认评价维度失败',
+      data: null,
+    });
+  }
+});
+
+// ==================== AI 服务对接配置 ====================
+
+router.get('/ai-settings', async (_req: AuthRequest, res) => {
+  try {
+    const settings = await getAiPublicSettings();
+    res.json({
+      code: 0,
+      message: 'success',
+      data: settings,
+    });
+  } catch (error) {
+    console.error('Get AI settings error:', error);
+    res.status(500).json({
+      code: 500,
+      message: '获取 AI 配置失败',
+      data: null,
+    });
+  }
+});
+
+router.put('/ai-settings', async (req: AuthRequest, res) => {
+  try {
+    const body = req.body as UpdateAiSettingsInput;
+
+    if (body.provider && body.provider !== 'custom' && body.provider !== 'openai_compatible') {
+      return res.status(400).json({
+        code: 400,
+        message: '不支持的 AI 提供方',
+        data: null,
+      });
+    }
+
+    if (body.temperature !== undefined) {
+      const temperature = Number(body.temperature);
+      if (!Number.isFinite(temperature) || temperature < 0 || temperature > 2) {
+        return res.status(400).json({
+          code: 400,
+          message: 'temperature 需要在 0 到 2 之间',
+          data: null,
+        });
+      }
+    }
+
+    if (body.thinkingLevel !== undefined) {
+      const level = String(body.thinkingLevel).trim().toLowerCase();
+      if (!['off', 'low', 'medium', 'high'].includes(level)) {
+        return res.status(400).json({
+          code: 400,
+          message: '思考等级需为 off / low / medium / high',
+          data: null,
+        });
+      }
+    }
+
+    const settings = await updateAiSettings(body);
+    res.json({
+      code: 0,
+      message: 'AI 配置已保存',
+      data: settings,
+    });
+  } catch (error) {
+    console.error('Update AI settings error:', error);
+    res.status(400).json({
+      code: 400,
+      message: error instanceof Error ? error.message : '保存 AI 配置失败',
+      data: null,
+    });
+  }
+});
+
+router.post('/ai-settings/test', async (_req: AuthRequest, res) => {
+  try {
+    const result = await testAiConnection();
+    res.json({
+      code: result.ok ? 0 : 400,
+      message: result.message,
+      data: result,
+    });
+  } catch (error) {
+    console.error('Test AI settings error:', error);
+    res.status(500).json({
+      code: 500,
+      message: '测试 AI 连接失败',
       data: null,
     });
   }

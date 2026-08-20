@@ -63,28 +63,28 @@ async function main() {
     });
   }
 
-// 4. 创建管理员账户
-console.log('创建管理员账户...');
-const adminPassword = await bcrypt.hash('admin123', 10);
-await prisma.student.upsert({
-  where: { studentId: 'admin' },
-  update: { nickname: '管理员', password: adminPassword, role: 'ADMIN' },
-  create: {
-    id: uuidv4(),
-    studentId: 'admin',
-    nickname: '管理员',
-    password: adminPassword,
-    avatarEmoji: '👨‍💼',
-    role: 'ADMIN',
-    gradeId: 6,
-    classCode: '管理员',
-  },
-});
+  // 4. 创建管理员账户（仅在不存在时写入默认密码，避免重复 seed 覆盖已修改密码）
+  console.log('创建管理员账户...');
+  const adminPassword = await bcrypt.hash('admin123', 10);
+  await prisma.student.upsert({
+    where: { studentId: 'admin' },
+    update: { nickname: '管理员', role: 'ADMIN' },
+    create: {
+      id: uuidv4(),
+      studentId: 'admin',
+      nickname: '管理员',
+      password: adminPassword,
+      avatarEmoji: '👨‍💼',
+      role: 'ADMIN',
+      gradeId: 6,
+      classCode: '管理员',
+    },
+  });
 
-// 5. 创建测试学生
-console.log('创建测试学生...');
-const hashedPassword = await bcrypt.hash('123456', 10);
-  
+  // 5. 创建测试学生
+  console.log('创建测试学生...');
+  const hashedPassword = await bcrypt.hash('123456', 10);
+
   const testStudents = [
     { studentId: '2024060101', nickname: '小明', gradeId: 6, classCode: '1班' },
     { studentId: '2024060201', nickname: '小红', gradeId: 6, classCode: '2班' },
@@ -94,7 +94,7 @@ const hashedPassword = await bcrypt.hash('123456', 10);
   for (const s of testStudents) {
     await prisma.student.upsert({
       where: { studentId: s.studentId },
-      update: { ...s, password: hashedPassword },
+      update: { nickname: s.nickname, gradeId: s.gradeId, classCode: s.classCode },
       create: { id: uuidv4(), ...s, password: hashedPassword },
     });
   }

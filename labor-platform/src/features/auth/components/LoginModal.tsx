@@ -45,7 +45,7 @@ export const LoginModal = ({ isOpen, onClose, onSwitchToRegister }: LoginModalPr
         <Input
           label="密码"
           type="password"
-          placeholder="请输入密码（初始密码：123456）"
+          placeholder="请输入密码"
           value={password}
           onChange={(e) => setPassword(e.target.value)}
         />

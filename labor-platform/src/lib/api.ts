@@ -1,10 +1,20 @@
-// 从环境变量读取 API 地址，默认 localhost 开发环境
-const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:3001/api';
+const API_BASE = import.meta.env.VITE_API_URL || '/api';
 
-// 导出基础 URL 供图片等静态资源拼接使用
+const stripApiSuffix = (value: string) => value.replace(/\/api\/?$/, '');
+
 export const API_ORIGIN = import.meta.env.VITE_API_URL
-  ? import.meta.env.VITE_API_URL.replace('/api', '')
-  : 'http://localhost:3001';
+  ? stripApiSuffix(import.meta.env.VITE_API_URL)
+  : '';
+
+export class ApiError extends Error {
+  code: number;
+
+  constructor(code: number, message: string) {
+    super(message);
+    this.name = 'ApiError';
+    this.code = code;
+  }
+}
 
 interface ApiResponse<T> {
   code: number;
@@ -12,7 +22,15 @@ interface ApiResponse<T> {
   data: T;
 }
 
+type UnauthorizedHandler = () => void;
+
 class ApiClient {
+  private unauthorizedHandler: UnauthorizedHandler | null = null;
+
+  onUnauthorized(handler: UnauthorizedHandler) {
+    this.unauthorizedHandler = handler;
+  }
+
   private getToken(): string | null {
     return localStorage.getItem('token');
   }
@@ -25,9 +43,32 @@ class ApiClient {
     }
   }
 
+  private handleUnauthorized() {
+    this.clearAuthToken();
+    this.unauthorizedHandler?.();
+  }
+
+  private async parseResponse<T>(response: Response): Promise<ApiResponse<T>> {
+    let payload: ApiResponse<T> | null = null;
+    try {
+      payload = await response.json();
+    } catch {
+      payload = null;
+    }
+
+    const code = payload?.code ?? response.status;
+    if (!response.ok || (payload && payload.code !== 0)) {
+      if (code === 401) {
+        this.handleUnauthorized();
+      }
+      throw new ApiError(code, payload?.message || `请求失败 (${response.status})`);
+    }
+
+    return payload as ApiResponse<T>;
+  }
+
   async request<T>(endpoint: string, options: RequestInit = {}): Promise<ApiResponse<T>> {
     const token = this.getToken();
-
     const headers: HeadersInit = {
       'Content-Type': 'application/json',
       ...options.headers,
@@ -42,24 +83,7 @@ class ApiClient {
       headers,
     });
 
-    // 检查 HTTP 状态码
-    if (!response.ok) {
-      // 尝试解析服务器返回的 JSON 错误信息
-      try {
-        const errorData = await response.json();
-        return errorData;
-      } catch {
-        // 服务器返回非 JSON（如 502 HTML 错误页）
-        return {
-          code: response.status,
-          message: `请求失败 (${response.status})`,
-          data: null as T,
-        };
-      }
-    }
-
-    const data = await response.json();
-    return data;
+    return this.parseResponse<T>(response);
   }
 
   async get<T>(endpoint: string): Promise<ApiResponse<T>> {
@@ -95,21 +119,7 @@ class ApiClient {
       body: formData,
     });
 
-    // 检查 HTTP 状态码
-    if (!response.ok) {
-      try {
-        const errorData = await response.json();
-        return errorData;
-      } catch {
-        return {
-          code: response.status,
-          message: `上传失败 (${response.status})`,
-          data: null as T,
-        };
-      }
-    }
-
-    return response.json();
+    return this.parseResponse<T>(response);
   }
 
   setAuthToken(token: string) {

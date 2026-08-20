@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useLocation, useNavigate } from 'react-router-dom';
 import { Button, Input, Container } from '@/features/shared';
 import { useUserStore } from '@/features/auth';
 import { achievementsApi } from '@/features/achievements/api';
@@ -28,14 +28,16 @@ const steps: Step[] = [
 
 export const SubmitPage = () => {
   const navigate = useNavigate();
+  const location = useLocation();
   const currentUser = useUserStore((s) => s.currentUser);
+  const locationState = location.state as { courseId?: string; courseTitle?: string } | null;
   
   const [currentStep, setCurrentStep] = useState(1);
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
   const [reflection, setReflection] = useState('');
-  const [courseId, setCourseId] = useState('');
-  const [courseTitle, setCourseTitle] = useState('');
+  const [courseId, setCourseId] = useState(locationState?.courseId || '');
+  const [courseTitle, setCourseTitle] = useState(locationState?.courseTitle || '');
   const [images, setImages] = useState<string[]>([]);
   const [isPublic, setIsPublic] = useState(true);
   const [evalAttitude, setEvalAttitude] = useState(0);
@@ -43,14 +45,14 @@ export const SubmitPage = () => {
   const [evalResult, setEvalResult] = useState(0);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitSuccess, setSubmitSuccess] = useState(false);
+  const [submitError, setSubmitError] = useState('');
+  const [uploadError, setUploadError] = useState('');
   const [courses, setCourses] = useState<Course[]>([]);
 
   const fetchCourses = useCallback(async () => {
     try {
       const response = await api.get<Course[]>('/courses');
-      if (response.code === 0 && response.data) {
-        setCourses(response.data);
-      }
+      setCourses(response.data);
     } catch {
       console.error('Failed to fetch courses');
     }
@@ -72,15 +74,25 @@ export const SubmitPage = () => {
   const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
+    setUploadError('');
     
     const url = await achievementsApi.uploadImage(file);
     if (url) {
       setImages([...images, url]);
+    } else {
+      setUploadError('图片上传失败，请重试');
     }
+  };
+
+  const canGoNext = () => {
+    if (currentStep === 1) return Boolean(title.trim() && description.trim());
+    if (currentStep === 3) return evalAttitude > 0 && evalSkill > 0 && evalResult > 0;
+    return true;
   };
 
   const handleSubmit = async () => {
     setIsSubmitting(true);
+    setSubmitError('');
     
     const success = await achievementsApi.create({
       title,
@@ -99,6 +111,8 @@ export const SubmitPage = () => {
     
     if (success) {
       setSubmitSuccess(true);
+    } else {
+      setSubmitError('提交失败，请检查网络后重试');
     }
   };
 
@@ -252,6 +266,8 @@ export const SubmitPage = () => {
                 </label>
               </div>
             </div>
+
+            {uploadError && <div className="text-sm text-red-600">{uploadError}</div>}
 
             {images.length > 0 && (
               <div>
@@ -417,17 +433,21 @@ src={`${API_ORIGIN}${img}`}
             <Button
               variant="primary"
               onClick={() => setCurrentStep(currentStep + 1)}
+              disabled={!canGoNext()}
             >
               下一步
             </Button>
           ) : (
-            <Button
-              variant="orange"
-              onClick={handleSubmit}
-              disabled={isSubmitting || !title || !description}
-            >
-              {isSubmitting ? '提交中...' : '🎉 提交成果'}
-            </Button>
+            <div className="flex flex-col items-end gap-2">
+              {submitError && <div className="text-sm text-red-600">{submitError}</div>}
+              <Button
+                variant="orange"
+                onClick={handleSubmit}
+                disabled={isSubmitting || !title || !description || evalAttitude === 0 || evalSkill === 0 || evalResult === 0}
+              >
+                {isSubmitting ? '提交中...' : '🎉 提交成果'}
+              </Button>
+            </div>
           )}
         </div>
       </div>

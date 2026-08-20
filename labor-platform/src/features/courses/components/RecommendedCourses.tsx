@@ -36,7 +36,7 @@ export const RecommendedCourses = ({ limit = 3 }: { limit?: number }) => {
           <CourseCard
             key={course.id}
             course={course}
-            onClick={() => navigate('/courses')}
+            onClick={() => navigate('/courses', { state: { courseId: course.id } })}
           />
         ))}
       </div>

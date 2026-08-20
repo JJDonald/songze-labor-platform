@@ -3,12 +3,11 @@ import { api } from '@/lib/api';
 
 export const profileApi = {
   get: async (studentId: string): Promise<ProfileData | null> => {
-    const response = await api.get<ProfileData>(`/students/${studentId}/profile`);
-    
-    if (response.code === 0 && response.data) {
+    try {
+      const response = await api.get<ProfileData>(`/students/${studentId}/profile`);
       return response.data;
+    } catch {
+      return null;
     }
-    
-    return null;
   },
 };

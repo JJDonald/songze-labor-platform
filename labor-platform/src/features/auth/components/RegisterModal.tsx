@@ -13,7 +13,10 @@ export const RegisterModal = ({ isOpen, onClose, onSwitchToLogin }: RegisterModa
   const [nickname, setNickname] = useState('');
   const [gradeId, setGradeId] = useState(6);
   const [classCode, setClassCode] = useState('');
-  
+  const [password, setPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
+  const [localError, setLocalError] = useState('');
+
   const { register, isLoading, error, clearError } = useUserStore();
 
   const grades = [
@@ -25,9 +28,14 @@ export const RegisterModal = ({ isOpen, onClose, onSwitchToLogin }: RegisterModa
 
   const handleSubmit = async () => {
     clearError();
-    if (!studentId.trim() || !nickname.trim() || !classCode.trim()) return;
-    
-    const success = await register(studentId.trim(), nickname.trim(), gradeId, classCode);
+    setLocalError('');
+    if (!studentId.trim() || !nickname.trim() || !classCode.trim() || !password) return;
+    if (password !== confirmPassword) {
+      setLocalError('两次输入的密码不一致');
+      return;
+    }
+
+    const success = await register(studentId.trim(), nickname.trim(), gradeId, classCode, password);
     if (success) {
       onClose();
     }
@@ -36,12 +44,12 @@ export const RegisterModal = ({ isOpen, onClose, onSwitchToLogin }: RegisterModa
   return (
     <Modal isOpen={isOpen} onClose={onClose} title="注册 🌱">
       <p className="text-sm text-text-muted mb-6">
-        首次使用？填写信息完成注册，初始密码为 <strong>123456</strong>
+        首次使用？填写学籍号并设置登录密码完成注册。
       </p>
 
-      {error && (
+      {(localError || error) && (
         <div className="bg-red-50 border border-red-200 text-red-600 text-sm px-3 py-2 rounded-lg mb-4">
-          {error}
+          {localError || error}
         </div>
       )}
 
@@ -59,6 +67,22 @@ export const RegisterModal = ({ isOpen, onClose, onSwitchToLogin }: RegisterModa
           value={nickname}
           onChange={(e) => setNickname(e.target.value)}
           maxLength={20}
+        />
+
+        <Input
+          label="密码"
+          type="password"
+          placeholder="至少 6 位，不要使用简单密码"
+          value={password}
+          onChange={(e) => setPassword(e.target.value)}
+        />
+
+        <Input
+          label="确认密码"
+          type="password"
+          placeholder="再次输入密码"
+          value={confirmPassword}
+          onChange={(e) => setConfirmPassword(e.target.value)}
         />
 
         <div>
