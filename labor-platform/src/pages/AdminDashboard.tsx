@@ -8,7 +8,19 @@ export const AdminDashboard = () => {
     queryFn: adminApi.getStats,
   });
 
+  const { data: pendingData } = useQuery({
+    queryKey: ['admin', 'achievements', 'pending-count'],
+    queryFn: () => adminApi.getAchievements({ status: 'PENDING', page: 1, pageSize: 1 }),
+  });
+
   const stats = statsData?.data;
+  const pendingPayload = pendingData?.data;
+  const pendingCount = stats?.pendingAchievements
+    ?? stats?.pendingReviewCount
+    ?? (Array.isArray(pendingPayload)
+      ? pendingPayload.filter((achievement) => (achievement.reviewStatus || 'PENDING') === 'PENDING').length
+      : pendingPayload?.total)
+    ?? 0;
 
   if (isLoading) {
     return (
@@ -22,13 +34,13 @@ export const AdminDashboard = () => {
     { label: '注册用户', value: stats?.totalUsers || 0, icon: '👥', color: 'bg-blue-100' },
     { label: '课程总数', value: stats?.totalCourses || 0, icon: '📚', color: 'bg-green-100' },
     { label: '成果总数', value: stats?.totalAchievements || 0, icon: '🏆', color: 'bg-yellow-100' },
-    { label: '点赞总数', value: stats?.totalLikes || 0, icon: '❤️', color: 'bg-pink-100' },
+    { label: '待审核成果', value: pendingCount, icon: '⏳', color: 'bg-amber-100' },
   ];
 
   const quickLinks = [
     { label: '用户管理', path: '/admin/users', icon: '👥', desc: '添加、编辑、删除用户账户' },
     { label: '课程管理', path: '/admin/courses', icon: '📚', desc: '管理课程内容和封面图片' },
-    { label: '成果管理', path: '/admin/achievements', icon: '🏆', desc: '审核和删除学生成果' },
+    { label: '成果审核', path: '/admin/achievements', icon: '🏆', desc: `审核学生成果，当前待处理 ${pendingCount} 条` },
     { label: 'AI 评价管理', path: '/admin/evaluation-dimensions', icon: '🤖', desc: '配置 AI URL / API Key / Model 与评价维度' },
   ];
 

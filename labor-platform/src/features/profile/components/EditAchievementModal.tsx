@@ -1,6 +1,8 @@
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { Modal, Button, Input } from '@/features/shared/components/ui';
 import type { Achievement } from '@/features/achievements/types';
+import { normalizeReviewStatus } from '@/features/achievements/types';
+import { ReviewStatusTag } from '@/features/achievements/components';
 import { achievementsApi } from '@/features/achievements/api';
 import { cn } from '@/features/shared/lib';
 import { API_ORIGIN } from '@/lib/api';
@@ -13,36 +15,31 @@ interface EditAchievementModalProps {
 }
 
 export const EditAchievementModal = ({ isOpen, achievement, onClose, onSuccess }: EditAchievementModalProps) => {
-  const [form, setForm] = useState({
-    title: '',
-    description: '',
-    reflection: '',
-    images: [] as string[],
-    isPublic: true,
-    evalAttitude: 0,
-    evalSkill: 0,
-    evalResult: 0,
-  });
+  const [form, setForm] = useState(() => ({
+    title: achievement?.title ?? '',
+    description: achievement?.description ?? '',
+    reflection: achievement?.reflection || '',
+    images: achievement?.images ?? [],
+    isPublic: achievement?.isPublic !== false,
+    evalAttitude: achievement?.evalAttitude ?? 0,
+    evalSkill: achievement?.evalSkill ?? 0,
+    evalResult: achievement?.evalResult ?? 0,
+  }));
   const [isUpdating, setIsUpdating] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
   const [error, setError] = useState('');
 
-  useEffect(() => {
-    if (!achievement) return;
-    setForm({
-      title: achievement.title,
-      description: achievement.description,
-      reflection: achievement.reflection || '',
-      images: achievement.images ?? [],
-      isPublic: achievement.isPublic !== false,
-      evalAttitude: achievement.evalAttitude ?? 0,
-      evalSkill: achievement.evalSkill ?? 0,
-      evalResult: achievement.evalResult ?? 0,
-    });
-    setError('');
-  }, [achievement]);
-
   const { title, description, reflection, images, isPublic, evalAttitude, evalSkill, evalResult } = form;
+  const hasSubstantiveChanges = achievement !== null && (
+    title !== achievement.title
+    || description !== achievement.description
+    || reflection !== (achievement.reflection || '')
+    || JSON.stringify(images) !== JSON.stringify(achievement.images ?? [])
+    || evalAttitude !== (achievement.evalAttitude ?? 0)
+    || evalSkill !== (achievement.evalSkill ?? 0)
+    || evalResult !== (achievement.evalResult ?? 0)
+  );
+  const requiresReview = hasSubstantiveChanges;
   const updateForm = <K extends keyof typeof form>(key: K, value: typeof form[K]) => {
     setForm((current) => ({ ...current, [key]: value }));
   };
@@ -68,7 +65,7 @@ export const EditAchievementModal = ({ isOpen, achievement, onClose, onSuccess }
     
     setIsUpdating(true);
     setError('');
-    const success = await achievementsApi.update(achievement.id, {
+    const result = await achievementsApi.update(achievement.id, {
       title,
       description,
       reflection,
@@ -80,7 +77,7 @@ export const EditAchievementModal = ({ isOpen, achievement, onClose, onSuccess }
     });
     setIsUpdating(false);
 
-    if (success) {
+    if (result) {
       onSuccess();
       onClose();
     } else {
@@ -126,6 +123,23 @@ export const EditAchievementModal = ({ isOpen, achievement, onClose, onSuccess }
     <Modal isOpen={isOpen} onClose={onClose} title="编辑成果 ✏️">
       <div className="space-y-4 max-h-[70vh] overflow-y-auto">
         {error && <div className="rounded-lg bg-red-50 px-3 py-2 text-sm text-red-600">{error}</div>}
+
+        {achievement && (
+          <div className="rounded-xl border border-brand-sand bg-brand-cream p-3">
+            <div className="flex flex-wrap items-center justify-between gap-2">
+              <span className="text-sm font-semibold">审核信息</span>
+              <ReviewStatusTag status={normalizeReviewStatus(achievement.reviewStatus)} />
+            </div>
+            {achievement.reviewStatus === 'REJECTED' && achievement.rejectionReason && (
+              <p className="mt-2 text-xs leading-relaxed text-red-700">
+                <span className="font-semibold">驳回原因：</span>{achievement.rejectionReason}
+              </p>
+            )}
+            {requiresReview && (
+              <p className="mt-2 text-xs text-text-muted">内容或评分有变更，提交后将重新进入审核。</p>
+            )}
+          </div>
+        )}
         <Input
           label="成果标题"
           value={title}
@@ -187,7 +201,7 @@ export const EditAchievementModal = ({ isOpen, achievement, onClose, onSuccess }
                   )}
                   <button
                     onClick={() => handleRemoveImage(index)}
-                    className="absolute top-1 right-1 w-5 h-5 bg-red-500 text-white rounded-full text-xs opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer"
+                    className="absolute top-1 right-1 w-5 h-5 bg-red-500 text-white rounded-full text-xs opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity cursor-pointer"
                   >
                     ✕
                   </button>
@@ -249,7 +263,11 @@ export const EditAchievementModal = ({ isOpen, achievement, onClose, onSuccess }
             onClick={handleSave}
             disabled={isUpdating || !title.trim() || !description.trim()}
           >
-            {isUpdating ? '保存中...' : '保存'}
+            {isUpdating
+              ? (requiresReview ? '提交中...' : '保存中...')
+              : (requiresReview
+                ? (normalizeReviewStatus(achievement?.reviewStatus) === 'PENDING' ? '提交审核' : '提交重新审核')
+                : '保存')}
           </Button>
         </div>
       </div>

@@ -6,6 +6,7 @@ import { enabledEvaluationDimensions, normalizeScore } from '../services/evaluat
 import { evaluateAchievementWithAgent } from '../services/aiEvaluation.js';
 import { studentImageUpload } from '../upload.js';
 import { clampScore, parsePagination, requireCompleteSelfScores, safeJsonParse } from '../utils.js';
+import { syncStudentBadges } from '../services/badges.js';
 
 const router = Router();
 
@@ -25,26 +26,29 @@ const loadCourseMap = async (courseIds: Array<string | null | undefined>) => {
 const serializeCourse = (
   courseId: string | null,
   courseTitle: string | null,
+  taskGroupId: string | null,
   courseMap: Map<string, { id: string; title: string; taskGroupId: string }>
 ) => {
   const course = courseId ? courseMap.get(courseId) : undefined;
   if (course) {
-    return { title: courseTitle || course.title, taskGroupId: course.taskGroupId };
+    return { title: courseTitle || course.title, taskGroupId: taskGroupId || course.taskGroupId };
   }
   if (courseTitle) {
-    return { title: courseTitle, taskGroupId: 'other' };
+    return { title: courseTitle, taskGroupId: taskGroupId || 'other' };
   }
   return null;
 };
 
 const canViewAchievement = (
-  achievement: { isPublic: boolean; studentId: string },
+  achievement: { isPublic: boolean; reviewStatus: string; studentId: string },
   user?: { id: string; role: string }
 ) => {
-  if (achievement.isPublic) return true;
-  if (!user) return false;
-  return user.role === 'ADMIN' || user.id === achievement.studentId;
+  if (user && (user.role === 'ADMIN' || user.id === achievement.studentId)) return true;
+  return achievement.reviewStatus === 'APPROVED' && achievement.isPublic;
 };
+
+const isPubliclyInteractive = (achievement: { isPublic: boolean; reviewStatus: string }) =>
+  achievement.reviewStatus === 'APPROVED' && achievement.isPublic;
 
 const recalculateEvaluationAverages = async (achievementId: string) => {
   const evaluations = await prisma.evaluation.findMany({
@@ -82,14 +86,14 @@ router.get('/', optionalAuthenticate, async (req: AuthRequest, res) => {
   try {
     const { taskGroupId } = req.query;
     const { page, limit } = parsePagination(req.query.page, req.query.limit);
-    const where: { isPublic: boolean; courseId?: { in: string[] } } = { isPublic: true };
+    const where: {
+      isPublic: boolean;
+      reviewStatus: 'APPROVED';
+      taskGroupId?: string;
+    } = { isPublic: true, reviewStatus: 'APPROVED' };
 
     if (typeof taskGroupId === 'string' && taskGroupId && taskGroupId !== 'all') {
-      const courses = await prisma.course.findMany({
-        where: { taskGroupId },
-        select: { id: true },
-      });
-      where.courseId = { in: courses.map((course) => course.id) };
+      where.taskGroupId = taskGroupId;
     }
 
     const [achievements, total] = await Promise.all([
@@ -130,7 +134,7 @@ router.get('/', optionalAuthenticate, async (req: AuthRequest, res) => {
     const data = achievements.map((a) => ({
       id: a.id,
       student: a.student,
-      course: serializeCourse(a.courseId, a.courseTitle, courseMap),
+      course: serializeCourse(a.courseId, a.courseTitle, a.taskGroupId, courseMap),
       title: a.title,
       description: a.description,
       images: parseImages(a.images),
@@ -163,12 +167,24 @@ router.get('/', optionalAuthenticate, async (req: AuthRequest, res) => {
 
 router.post('/', authenticate, async (req: AuthRequest, res) => {
   try {
-    const { title, description, reflection, images, isPublic, evalAttitude, evalSkill, evalResult, courseId, courseTitle } = req.body;
+    const { title, description, reflection, images, isPublic, evalAttitude, evalSkill, evalResult, courseId } = req.body;
 
-    if (!title || !description) {
+    if (!title || !description || !courseId) {
       return res.status(400).json({
         code: 400,
-        message: '请填写成果标题和描述',
+        message: '请填写成果标题、描述并选择课程',
+        data: null,
+      });
+    }
+
+    const course = await prisma.course.findUnique({
+      where: { id: String(courseId) },
+      select: { id: true, title: true, taskGroupId: true },
+    });
+    if (!course) {
+      return res.status(400).json({
+        code: 400,
+        message: '课程不存在',
         data: null,
       });
     }
@@ -190,13 +206,15 @@ router.post('/', authenticate, async (req: AuthRequest, res) => {
         data: {
           id: uuidv4(),
           studentId: req.student!.id,
-          courseId: courseId || null,
-          courseTitle: courseTitle || null,
+          courseId: course.id,
+          courseTitle: course.title,
+          taskGroupId: course.taskGroupId,
           title: String(title).trim(),
           description: String(description).trim(),
           reflection: reflection ? String(reflection).trim() : null,
           images: JSON.stringify(safeImages),
           isPublic: isPublic !== false,
+          reviewStatus: 'PENDING',
           ...scores,
         },
       });
@@ -209,7 +227,7 @@ router.post('/', authenticate, async (req: AuthRequest, res) => {
 
     res.json({
       code: 0,
-      message: '成果提交成功',
+      message: '成果已提交，等待审核',
       data: achievement,
     });
   } catch (error) {
@@ -227,13 +245,13 @@ router.post('/:id/like', authenticate, async (req: AuthRequest, res) => {
     const { id } = req.params;
     const achievement = await prisma.achievement.findUnique({
       where: { id },
-      select: { id: true, isPublic: true, studentId: true, likesCount: true },
+      select: { id: true, isPublic: true, reviewStatus: true, studentId: true, likesCount: true },
     });
 
-    if (!achievement || !canViewAchievement(achievement, req.user)) {
+    if (!achievement || !isPubliclyInteractive(achievement)) {
       return res.status(404).json({
         code: 404,
-        message: '成果不存在或无权查看',
+        message: '成果不存在或不可互动',
         data: null,
       });
     }
@@ -346,18 +364,75 @@ router.put('/:id', authenticate, async (req: AuthRequest, res) => {
       });
     }
 
-    const updated = await prisma.achievement.update({
-      where: { id },
-      data: {
-        title: title ? String(title).trim() : achievement.title,
-        description: description ? String(description).trim() : achievement.description,
-        reflection: reflection !== undefined ? (reflection ? String(reflection).trim() : null) : achievement.reflection,
-        images: Array.isArray(images) ? JSON.stringify(images.filter((item) => typeof item === 'string')) : achievement.images,
-        isPublic: isPublic !== undefined ? Boolean(isPublic) : achievement.isPublic,
-        evalAttitude: evalAttitude !== undefined ? clampScore(evalAttitude, achievement.evalAttitude) : achievement.evalAttitude,
-        evalSkill: evalSkill !== undefined ? clampScore(evalSkill, achievement.evalSkill) : achievement.evalSkill,
-        evalResult: evalResult !== undefined ? clampScore(evalResult, achievement.evalResult) : achievement.evalResult,
-      },
+    const nextTitle = title !== undefined ? String(title).trim() : achievement.title;
+    const nextDescription = description !== undefined ? String(description).trim() : achievement.description;
+    if (!nextTitle || !nextDescription) {
+      return res.status(400).json({
+        code: 400,
+        message: '成果标题和描述不能为空',
+        data: null,
+      });
+    }
+
+    const nextReflection = reflection !== undefined
+      ? (reflection ? String(reflection).trim() : null)
+      : achievement.reflection;
+    const nextImages = Array.isArray(images)
+      ? JSON.stringify(images.filter((item) => typeof item === 'string'))
+      : achievement.images;
+    const nextAttitude = evalAttitude !== undefined ? clampScore(evalAttitude, achievement.evalAttitude) : achievement.evalAttitude;
+    const nextSkill = evalSkill !== undefined ? clampScore(evalSkill, achievement.evalSkill) : achievement.evalSkill;
+    const nextResult = evalResult !== undefined ? clampScore(evalResult, achievement.evalResult) : achievement.evalResult;
+    const substantiveChanged =
+      nextTitle !== achievement.title ||
+      nextDescription !== achievement.description ||
+      nextReflection !== achievement.reflection ||
+      nextImages !== achievement.images ||
+      nextAttitude !== achievement.evalAttitude ||
+      nextSkill !== achievement.evalSkill ||
+      nextResult !== achievement.evalResult;
+
+    const updated = await prisma.$transaction(async (tx) => {
+      if (substantiveChanged) {
+        await Promise.all([
+          tx.like.deleteMany({ where: { achievementId: id } }),
+          tx.evaluation.deleteMany({ where: { achievementId: id } }),
+        ]);
+        if (achievement.likesCount > 0) {
+          await tx.student.update({
+            where: { id: achievement.studentId },
+            data: { totalLikes: { decrement: achievement.likesCount } },
+          });
+        }
+      }
+      const result = await tx.achievement.update({
+        where: { id },
+        data: {
+          title: nextTitle,
+          description: nextDescription,
+          reflection: nextReflection,
+          images: nextImages,
+          isPublic: isPublic !== undefined ? Boolean(isPublic) : achievement.isPublic,
+          evalAttitude: nextAttitude,
+          evalSkill: nextSkill,
+          evalResult: nextResult,
+          ...(substantiveChanged
+            ? {
+                reviewStatus: 'PENDING' as const,
+                reviewComment: null,
+                reviewedAt: null,
+                reviewedById: null,
+                likesCount: 0,
+                avgAttitude: 0,
+                avgSkill: 0,
+                avgResult: 0,
+                evalCount: 0,
+              }
+            : {}),
+        },
+      });
+      await syncStudentBadges(tx, achievement.studentId);
+      return result;
     });
 
     res.json({
@@ -407,6 +482,7 @@ router.delete('/:id', authenticate, async (req: AuthRequest, res) => {
           totalLikes: { decrement: achievement.likesCount },
         },
       });
+      await syncStudentBadges(tx, achievement.studentId);
     });
 
     res.json({
@@ -483,12 +559,15 @@ router.get('/:id', optionalAuthenticate, async (req: AuthRequest, res) => {
       data: {
         id: achievement.id,
         student: achievement.student,
-        course: serializeCourse(achievement.courseId, achievement.courseTitle, courseMap),
+        course: serializeCourse(achievement.courseId, achievement.courseTitle, achievement.taskGroupId, courseMap),
         title: achievement.title,
         description: achievement.description,
         reflection: achievement.reflection,
         images: parseImages(achievement.images),
         isPublic: achievement.isPublic,
+        reviewStatus: achievement.reviewStatus,
+        reviewComment: achievement.reviewComment,
+        reviewedAt: achievement.reviewedAt,
         evalAttitude: achievement.evalAttitude,
         evalSkill: achievement.evalSkill,
         evalResult: achievement.evalResult,
@@ -538,10 +617,10 @@ router.post('/:id/evaluate', authenticate, async (req: AuthRequest, res) => {
       where: { id },
     });
 
-    if (!achievement || !canViewAchievement(achievement, req.user)) {
+    if (!achievement || !isPubliclyInteractive(achievement)) {
       return res.status(404).json({
         code: 404,
-        message: '成果不存在或无权查看',
+        message: '成果不存在或不可互动',
         data: null,
       });
     }
@@ -609,10 +688,10 @@ router.post('/:id/ai-evaluate', authenticate, rateLimit('ai-evaluate', 8, 10 * 6
       where: { id },
     });
 
-    if (!achievement || !canViewAchievement(achievement, req.user)) {
+    if (!achievement || !isPubliclyInteractive(achievement)) {
       return res.status(404).json({
         code: 404,
-        message: '成果不存在或无权查看',
+        message: '成果不存在或不可互动',
         data: null,
       });
     }

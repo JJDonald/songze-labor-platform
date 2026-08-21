@@ -47,17 +47,17 @@ async function main() {
   // 3. 创建徽章
   console.log('创建徽章...');
   const badges = [
-    { name: '烹饪新星', emoji: '🍳', description: '完成3个烹饪项目', category: 'cook' },
-    { name: '种植达人', emoji: '🌱', description: '完成2个农业项目', category: 'farm' },
-    { name: '手工能手', emoji: '✂️', description: '完成3个工艺项目', category: 'craft' },
-    { name: '维修小将', emoji: '🔧', description: '完成2个器具维护项目', category: 'appliance' },
-    { name: '志愿之星', emoji: '🤝', description: '参与5次志愿活动', category: 'volunteer' },
-    { name: '科技先锋', emoji: '💻', description: '完成新技术体验项目', category: 'tech' },
+    { key: 'cook-3', name: '烹饪新星', emoji: '🍳', description: '完成3个烹饪项目', category: 'cook', taskGroupId: 'cook', threshold: 3, sortOrder: 1 },
+    { key: 'farm-2', name: '种植达人', emoji: '🌱', description: '完成2个农业项目', category: 'farm', taskGroupId: 'farm', threshold: 2, sortOrder: 2 },
+    { key: 'craft-3', name: '手工能手', emoji: '✂️', description: '完成3个工艺项目', category: 'craft', taskGroupId: 'craft', threshold: 3, sortOrder: 3 },
+    { key: 'appliance-2', name: '维修小将', emoji: '🔧', description: '完成2个器具维护项目', category: 'appliance', taskGroupId: 'appliance', threshold: 2, sortOrder: 4 },
+    { key: 'volunteer-5', name: '志愿之星', emoji: '🤝', description: '参与5次志愿活动', category: 'volunteer', taskGroupId: 'volunteer', threshold: 5, sortOrder: 5 },
+    { key: 'tech-1', name: '科技先锋', emoji: '💻', description: '完成新技术体验项目', category: 'tech', taskGroupId: 'tech', threshold: 1, sortOrder: 6 },
   ];
 
   for (const badge of badges) {
     await prisma.badge.upsert({
-      where: { name: badge.name },
+      where: { key: badge.key },
       update: badge,
       create: { id: uuidv4(), ...badge },
     });
@@ -131,6 +131,8 @@ async function main() {
             id: uuidv4(),
             studentId: student1.id,
             images: '["🍞"]',
+            reviewStatus: 'APPROVED',
+            reviewedAt: new Date(),
             ...a,
           },
         });

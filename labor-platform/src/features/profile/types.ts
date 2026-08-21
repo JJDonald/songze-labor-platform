@@ -24,7 +24,10 @@ export interface BadgeStatus {
   emoji: string;
   description: string;
   earned: boolean;
-  earnedAt?: Date | string;
+  threshold: number;
+  progress: number;
+  remaining: number;
+  earnedAt?: Date | string | null;
 }
 
 export interface ProfileData {

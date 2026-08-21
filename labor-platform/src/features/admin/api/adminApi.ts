@@ -1,4 +1,5 @@
 import { api } from '@/lib/api';
+import type { ReviewStatus } from '@/features/achievements/types';
 
 export interface AdminUser {
   id: string;
@@ -40,15 +41,53 @@ export interface AdminAchievement {
   id: string;
   title: string;
   description: string;
+  reflection?: string | null;
+  images?: string[] | string | null;
   isPublic: boolean;
+  reviewStatus?: ReviewStatus;
+  reviewComment?: string | null;
+  reviewedAt?: string | null;
+  evalAttitude?: number;
+  evalSkill?: number;
+  evalResult?: number;
   likesCount: number;
   createdAt: string;
+  updatedAt: string;
   student?: {
     id: string;
     studentId: string;
     nickname: string;
     avatarEmoji: string;
+    gradeId?: number;
+    classCode?: string;
   };
+  course?: {
+    id?: string;
+    title: string;
+    taskGroupId?: string;
+  } | null;
+}
+
+export type AchievementReviewStatus = ReviewStatus;
+
+export interface AdminAchievementPage {
+  data: AdminAchievement[];
+  total: number;
+  page: number;
+  pageSize: number;
+  totalPages: number;
+}
+
+export interface AchievementReviewInput {
+  status: Exclude<AchievementReviewStatus, 'PENDING'>;
+  reviewComment?: string;
+  expectedUpdatedAt: string;
+}
+
+export interface BatchAchievementReviewInput {
+  status: Exclude<AchievementReviewStatus, 'PENDING'>;
+  reviewComment?: string;
+  items: Array<{ id: string; expectedUpdatedAt: string }>;
 }
 
 export interface TaskGroup {
@@ -69,6 +108,8 @@ export interface AdminStats {
   totalCourses: number;
   totalAchievements: number;
   totalLikes: number;
+  pendingAchievements?: number;
+  pendingReviewCount?: number;
 }
 
 export interface EvaluationDimension {
@@ -170,7 +211,21 @@ export const adminApi = {
   deleteCourse: (id: string) => api.delete<void>(`/admin/courses/${id}`),
 
   // Achievements
-  getAchievements: () => api.get<AdminAchievement[]>('/admin/achievements'),
+  getAchievements: (params: { status?: AchievementReviewStatus; page?: number; pageSize?: number } = {}) => {
+    const search = new URLSearchParams();
+    if (params.status) search.set('status', params.status);
+    if (params.page) search.set('page', String(params.page));
+    if (params.pageSize) search.set('pageSize', String(params.pageSize));
+    const query = search.toString();
+    return api.get<AdminAchievementPage | AdminAchievement[]>(`/admin/achievements${query ? `?${query}` : ''}`);
+  },
+  reviewAchievement: (id: string, data: AchievementReviewInput) =>
+    api.request<AdminAchievement>(`/admin/achievements/${id}/review`, {
+      method: 'PATCH',
+      body: JSON.stringify(data),
+    }),
+  batchReviewAchievements: (data: BatchAchievementReviewInput) =>
+    api.post<{ updated: number }>('/admin/achievements/batch-review', data),
   updateAchievement: (id: string, data: { isPublic?: boolean; title?: string; description?: string }) =>
     api.put<AdminAchievement>(`/admin/achievements/${id}`, data),
   deleteAchievement: (id: string) => api.delete<void>(`/admin/achievements/${id}`),

@@ -1,4 +1,9 @@
-import type { Achievement, AchievementFilters } from '../types';
+import type {
+  Achievement,
+  AchievementFilters,
+  AchievementMutationResult,
+} from '../types';
+import { normalizeReviewStatus } from '../types';
 import { api } from '@/lib/api';
 
 interface AchievementResponse {
@@ -17,6 +22,11 @@ interface AchievementResponse {
   title: string;
   description: string;
   images: string[];
+  isPublic?: boolean;
+  reviewStatus?: string | null;
+  reviewComment?: string | null;
+  rejectionReason?: string | null;
+  rejectReason?: string | null;
   evalAttitude: number;
   evalSkill: number;
   evalResult: number;
@@ -42,6 +52,11 @@ interface AchievementDetail {
   description: string;
   reflection?: string;
   images: string[];
+  isPublic?: boolean;
+  reviewStatus?: string | null;
+  reviewComment?: string | null;
+  rejectionReason?: string | null;
+  rejectReason?: string | null;
   evalAttitude: number;
   evalSkill: number;
   evalResult: number;
@@ -60,6 +75,24 @@ interface AchievementDetail {
   isOwner: boolean;
   evaluationDimensions?: EvaluationDimension[];
 }
+
+interface MutationResponse {
+  id?: string;
+  reviewStatus?: string | null;
+  reviewComment?: string | null;
+  rejectionReason?: string | null;
+  rejectReason?: string | null;
+  achievement?: MutationResponse | null;
+}
+
+const normalizeMutationResult = (data: MutationResponse | null | undefined): AchievementMutationResult => {
+  const result = data?.achievement ?? data;
+  return {
+    id: result?.id,
+    reviewStatus: normalizeReviewStatus(result?.reviewStatus),
+    rejectionReason: result?.reviewComment ?? result?.rejectionReason ?? result?.rejectReason ?? null,
+  };
+};
 
 export interface EvaluationDimension {
   id: string;
@@ -103,6 +136,9 @@ export const achievementsApi = {
         title: a.title,
         description: a.description,
         images: a.images,
+        isPublic: a.isPublic,
+        reviewStatus: a.reviewStatus ? normalizeReviewStatus(a.reviewStatus) : undefined,
+        rejectionReason: a.reviewComment ?? a.rejectionReason ?? a.rejectReason ?? null,
         evalAttitude: a.evalAttitude,
         evalSkill: a.evalSkill,
         evalResult: a.evalResult,
@@ -131,12 +167,12 @@ export const achievementsApi = {
     evalResult: number;
     courseId?: string;
     courseTitle?: string;
-  }): Promise<boolean> => {
+  }): Promise<AchievementMutationResult | null> => {
     try {
-      await api.post('/achievements', data);
-      return true;
+      const response = await api.post<MutationResponse>('/achievements', data);
+      return normalizeMutationResult(response.data);
     } catch {
-      return false;
+      return null;
     }
   },
 
@@ -167,12 +203,12 @@ export const achievementsApi = {
     evalAttitude: number;
     evalSkill: number;
     evalResult: number;
-  }): Promise<boolean> => {
+  }): Promise<AchievementMutationResult | null> => {
     try {
-      await api.put(`/achievements/${id}`, data);
-      return true;
+      const response = await api.put<MutationResponse>(`/achievements/${id}`, data);
+      return normalizeMutationResult(response.data);
     } catch {
-      return false;
+      return null;
     }
   },
 
@@ -188,7 +224,13 @@ export const achievementsApi = {
   getById: async (id: string): Promise<AchievementDetail | null> => {
     try {
       const response = await api.get<AchievementDetail>(`/achievements/${id}`);
-      return response.data;
+      return {
+        ...response.data,
+        reviewStatus: response.data.reviewStatus
+          ? normalizeReviewStatus(response.data.reviewStatus)
+          : undefined,
+        rejectionReason: response.data.reviewComment ?? response.data.rejectionReason ?? response.data.rejectReason ?? null,
+      };
     } catch {
       return null;
     }

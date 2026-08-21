@@ -1,6 +1,8 @@
 import { formatDate } from '@/features/shared/lib';
 import { Stars } from '@/features/shared/components/ui';
 import type { Achievement } from '@/features/achievements/types';
+import { normalizeReviewStatus } from '@/features/achievements/types';
+import { ReviewStatusTag } from '@/features/achievements/components';
 import { API_ORIGIN } from '@/lib/api';
 
 interface TimelineProps {
@@ -28,9 +30,19 @@ export const Timeline = ({ achievements, onEdit }: TimelineProps) => {
             className="flex-1 bg-white rounded-xl p-4.5 shadow-sm hover:shadow hover:translate-x-1 transition-all cursor-pointer mb-1"
             onClick={() => onEdit?.(item)}
           >
-            <div className="text-xs text-text-muted mb-1.5">
-              {formatDate(item.createdAt)}
+            <div className="mb-3 flex flex-wrap items-center gap-2">
+              <span className="text-xs text-text-muted">{formatDate(item.createdAt)}</span>
+              <ReviewStatusTag status={normalizeReviewStatus(item.reviewStatus)} />
+              <span className="inline-flex items-center rounded-full border border-brand-sand bg-brand-cream px-2 py-0.5 text-xs font-semibold text-text-soft">
+                {item.isPublic !== false ? '公开' : '仅自己可见'}
+              </span>
             </div>
+
+            {item.reviewStatus === 'REJECTED' && item.rejectionReason && (
+              <div className="mb-3 rounded-lg border border-red-100 bg-red-50 px-3 py-2 text-xs text-red-700">
+                <span className="font-semibold">驳回原因：</span>{item.rejectionReason}
+              </div>
+            )}
             
             {item.images.length > 0 && hasRealImage(item.images) && (
               <div className="mb-3">

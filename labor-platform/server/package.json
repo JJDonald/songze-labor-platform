@@ -5,10 +5,13 @@
   "scripts": {
     "dev": "tsx watch src/index.ts",
     "build": "tsc",
+    "test": "vitest run",
+    "test:watch": "vitest",
     "start": "node dist/index.js",
     "db:generate": "prisma generate",
     "db:push": "prisma db push",
     "db:seed": "tsx prisma/seed.ts",
+    "db:backfill-review-badges": "tsx prisma/backfillReviewBadges.ts",
     "db:studio": "prisma studio"
   },
   "dependencies": {
@@ -26,9 +29,12 @@
     "@types/express": "^4.17.21",
     "@types/jsonwebtoken": "^9.0.7",
     "@types/multer": "^1.4.12",
+    "@types/supertest": "^7.2.1",
     "@types/uuid": "^10.0.0",
     "prisma": "^6.0.0",
+    "supertest": "^7.2.2",
     "tsx": "^4.19.0",
-    "typescript": "^5.6.0"
+    "typescript": "^5.6.0",
+    "vitest": "^4.1.11"
   }
 }

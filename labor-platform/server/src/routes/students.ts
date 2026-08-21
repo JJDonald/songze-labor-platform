@@ -9,7 +9,7 @@ router.get('/:id/profile', authenticate, async (req: AuthRequest, res) => {
   try {
     const { id } = req.params;
 
-    if (req.student!.id !== id) {
+    if (req.student!.id !== id && req.student!.role !== 'ADMIN') {
       return res.status(403).json({
         code: 403,
         message: '无权访问',
@@ -54,7 +54,22 @@ router.get('/:id/profile', authenticate, async (req: AuthRequest, res) => {
       },
     });
 
-    const allBadges = await prisma.badge.findMany();
+    const allBadges = await prisma.badge.findMany({
+      orderBy: [{ sortOrder: 'asc' }, { createdAt: 'asc' }],
+    });
+
+    const approvedCounts = await prisma.achievement.groupBy({
+      by: ['taskGroupId'],
+      where: {
+        studentId: id,
+        reviewStatus: 'APPROVED',
+        taskGroupId: { not: null },
+      },
+      _count: { _all: true },
+    });
+    const progressByTaskGroup = new Map(
+      approvedCounts.map((item) => [item.taskGroupId, item._count._all])
+    );
 
     const profile = {
       id: student.id,
@@ -77,12 +92,15 @@ router.get('/:id/profile', authenticate, async (req: AuthRequest, res) => {
     const timeline = achievements.map((a) => ({
       id: a.id,
       createdAt: a.createdAt,
-      course: { title: a.courseTitle || '劳动项目', emoji: '📝', taskGroupId: 'other' },
+      course: { title: a.courseTitle || '劳动项目', emoji: '📝', taskGroupId: a.taskGroupId || 'other' },
       title: a.title,
       description: a.description,
       reflection: a.reflection,
       images: safeJsonParse<string[]>(a.images, []),
       isPublic: a.isPublic,
+      reviewStatus: a.reviewStatus,
+      reviewComment: a.reviewComment,
+      reviewedAt: a.reviewedAt,
       evalAttitude: a.evalAttitude,
       evalSkill: a.evalSkill,
       evalResult: a.evalResult,
@@ -97,6 +115,11 @@ router.get('/:id/profile', authenticate, async (req: AuthRequest, res) => {
         name: b.name,
         emoji: b.emoji,
         description: b.description,
+        key: b.key,
+        taskGroupId: b.taskGroupId,
+        threshold: b.threshold,
+        progress: progressByTaskGroup.get(b.taskGroupId) ?? 0,
+        remaining: Math.max(0, b.threshold - (progressByTaskGroup.get(b.taskGroupId) ?? 0)),
         earned: !!earned,
         earnedAt: earned?.earnedAt || null,
       };
@@ -135,6 +158,9 @@ router.get('/my-achievements', authenticate, async (req: AuthRequest, res) => {
       reflection: a.reflection,
       images: safeJsonParse<string[]>(a.images, []),
       isPublic: a.isPublic,
+      reviewStatus: a.reviewStatus,
+      reviewComment: a.reviewComment,
+      reviewedAt: a.reviewedAt,
       evalAttitude: a.evalAttitude,
       evalSkill: a.evalSkill,
       evalResult: a.evalResult,

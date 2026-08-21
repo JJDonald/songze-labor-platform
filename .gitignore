@@ -37,6 +37,7 @@ Thumbs.db
 # Database
 *.db
 *.db-journal
+*.db.*.bak
 
 # Uploads (keep directory but ignore contents)
 labor-platform/server/uploads/*
@@ -48,3 +49,7 @@ coverage/
 # Cache
 .cache/
 .parcel-cache/
+
+# Agent tool directories
+.zcode/
+.workbuddy/

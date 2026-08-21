@@ -64,15 +64,18 @@ export const ProfilePage = () => {
         </div>
       </Container>
 
-      <EditAchievementModal
-        isOpen={showEditModal}
-        achievement={editingAchievement}
-        onClose={() => {
-          setShowEditModal(false);
-          setEditingAchievement(null);
-        }}
-        onSuccess={handleEditSuccess}
-      />
+      {editingAchievement && (
+        <EditAchievementModal
+          key={editingAchievement.id}
+          isOpen={showEditModal}
+          achievement={editingAchievement}
+          onClose={() => {
+            setShowEditModal(false);
+            setEditingAchievement(null);
+          }}
+          onSuccess={handleEditSuccess}
+        />
+      )}
     </div>
   );
 };

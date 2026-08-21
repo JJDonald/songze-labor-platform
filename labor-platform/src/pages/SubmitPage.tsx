@@ -3,6 +3,8 @@ import { useLocation, useNavigate } from 'react-router-dom';
 import { Button, Input, Container } from '@/features/shared';
 import { useUserStore } from '@/features/auth';
 import { achievementsApi } from '@/features/achievements/api';
+import type { AchievementMutationResult } from '@/features/achievements/types';
+import { ReviewStatusTag } from '@/features/achievements/components';
 import { API_ORIGIN } from '@/lib/api';
 import { cn } from '@/features/shared/lib';
 import { api } from '@/lib/api';
@@ -44,7 +46,7 @@ export const SubmitPage = () => {
   const [evalSkill, setEvalSkill] = useState(0);
   const [evalResult, setEvalResult] = useState(0);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [submitSuccess, setSubmitSuccess] = useState(false);
+  const [submitResult, setSubmitResult] = useState<AchievementMutationResult | null>(null);
   const [submitError, setSubmitError] = useState('');
   const [uploadError, setUploadError] = useState('');
   const [courses, setCourses] = useState<Course[]>([]);
@@ -85,7 +87,7 @@ export const SubmitPage = () => {
   };
 
   const canGoNext = () => {
-    if (currentStep === 1) return Boolean(title.trim() && description.trim());
+    if (currentStep === 1) return Boolean(courseId && title.trim() && description.trim());
     if (currentStep === 3) return evalAttitude > 0 && evalSkill > 0 && evalResult > 0;
     return true;
   };
@@ -94,7 +96,7 @@ export const SubmitPage = () => {
     setIsSubmitting(true);
     setSubmitError('');
     
-    const success = await achievementsApi.create({
+    const result = await achievementsApi.create({
       title,
       description,
       reflection,
@@ -109,18 +111,20 @@ export const SubmitPage = () => {
 
     setIsSubmitting(false);
     
-    if (success) {
-      setSubmitSuccess(true);
+    if (result) {
+      setSubmitResult(result);
     } else {
       setSubmitError('提交失败，请检查网络后重试');
     }
   };
 
-  const renderStars = (value: number, onChange: (v: number) => void) => (
+  const renderStars = (label: string, value: number, onChange: (v: number) => void) => (
     <div className="flex gap-1">
       {[1, 2, 3, 4, 5].map((star) => (
         <button
           key={star}
+          type="button"
+          aria-label={`${label} ${star} 分`}
           onClick={() => onChange(star)}
           className={cn(
             'text-2xl cursor-pointer transition-transform hover:scale-110',
@@ -133,21 +137,21 @@ export const SubmitPage = () => {
     </div>
   );
 
-  if (submitSuccess) {
+  if (submitResult) {
     return (
       <Container className="py-16">
-        <div className="text-center">
-          <div className="text-6xl mb-4">🎉</div>
-          <h1 className="font-display text-3xl mb-2">成果提交成功！</h1>
-          <p className="text-text-muted mb-6">你的劳动成果已经提交，快去看看吧！</p>
-          <div className="flex gap-3 justify-center">
-            <Button variant="primary" onClick={() => navigate('/achievements')}>
-              查看成果墙
-            </Button>
-            <Button variant="ghost" onClick={() => navigate('/profile')}>
-              我的档案
-            </Button>
+        <div className="mx-auto max-w-lg text-center">
+          <div className="text-6xl mb-4">📝</div>
+          <h1 className="font-display text-3xl mb-2">成果已提交审核</h1>
+          <div className="mb-4">
+            <ReviewStatusTag status={submitResult.reviewStatus} />
           </div>
+          <p className="text-text-muted mb-6">
+            审核结果会显示在个人档案中，通过后将按你的公开设置展示。
+          </p>
+          <Button variant="primary" onClick={() => navigate('/profile')}>
+            前往个人档案
+          </Button>
         </div>
       </Container>
     );
@@ -205,7 +209,7 @@ export const SubmitPage = () => {
                 }}
                 className="w-full px-4 py-3 rounded-xl border-2 border-brand-sand bg-brand-cream font-body text-sm text-text outline-none transition-colors focus:border-brand-green focus:bg-white"
               >
-                <option value="">请选择劳动项目（可选）</option>
+                <option value="">请选择劳动项目</option>
                 {courses.map((course) => (
                   <option key={course.id} value={course.id}>
                     {course.emoji} {course.title}
@@ -282,7 +286,7 @@ src={`${API_ORIGIN}${img}`}
                       />
                       <button
                         onClick={() => setImages(images.filter((_, i) => i !== index))}
-                        className="absolute top-1 right-1 w-6 h-6 bg-red-500 text-white rounded-full text-xs opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer"
+                        className="absolute top-1 right-1 w-6 h-6 bg-red-500 text-white rounded-full text-xs opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity cursor-pointer"
                       >
                         ✕
                       </button>
@@ -326,7 +330,7 @@ src={`${API_ORIGIN}${img}`}
               <div>
                 <div className="flex items-center justify-between mb-2">
                   <span className="text-sm font-semibold">劳动态度</span>
-                  {renderStars(evalAttitude, setEvalAttitude)}
+                  {renderStars('劳动态度', evalAttitude, setEvalAttitude)}
                 </div>
                 <p className="text-xs text-text-muted">
                   {evalAttitude === 0 && '点击星星评分'}
@@ -341,7 +345,7 @@ src={`${API_ORIGIN}${img}`}
               <div>
                 <div className="flex items-center justify-between mb-2">
                   <span className="text-sm font-semibold">劳动技能</span>
-                  {renderStars(evalSkill, setEvalSkill)}
+                  {renderStars('劳动技能', evalSkill, setEvalSkill)}
                 </div>
                 <p className="text-xs text-text-muted">
                   {evalSkill === 0 && '点击星星评分'}
@@ -356,7 +360,7 @@ src={`${API_ORIGIN}${img}`}
               <div>
                 <div className="flex items-center justify-between mb-2">
                   <span className="text-sm font-semibold">劳动成果</span>
-                  {renderStars(evalResult, setEvalResult)}
+                  {renderStars('劳动成果', evalResult, setEvalResult)}
                 </div>
                 <p className="text-xs text-text-muted">
                   {evalResult === 0 && '点击星星评分'}

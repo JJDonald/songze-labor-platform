@@ -1,4 +1,5 @@
-import { Router } from 'express';
+import { Router, type Response } from 'express';
+import type { Prisma } from '@prisma/client';
 import prisma from '../prisma.js';
 import bcrypt from 'bcryptjs';
 import { v4 as uuidv4 } from 'uuid';
@@ -10,7 +11,8 @@ import {
   updateAiSettings,
   type UpdateAiSettingsInput,
 } from '../services/aiSettings.js';
-import { assertPasswordStrength } from '../utils.js';
+import { assertPasswordStrength, parsePagination } from '../utils.js';
+import { syncStudentBadges } from '../services/badges.js';
 
 const router = Router();
 
@@ -405,27 +407,131 @@ router.delete('/courses/:id', async (req: AuthRequest, res) => {
 
 // ==================== 成果管理 ====================
 
+type ReviewStatus = 'PENDING' | 'APPROVED' | 'REJECTED';
+
+const parseReviewStatus = (value: unknown): ReviewStatus | null => {
+  const status = String(value || '').toUpperCase();
+  return status === 'PENDING' || status === 'APPROVED' || status === 'REJECTED'
+    ? status
+    : null;
+};
+
+const parseExpectedUpdatedAt = (value: unknown) => {
+  if (typeof value !== 'string' || !value.trim()) return null;
+  const parsed = new Date(value);
+  return Number.isNaN(parsed.getTime()) ? null : parsed;
+};
+
+const serializeAdminAchievement = <T extends {
+  images: string;
+  courseId: string | null;
+  courseTitle: string | null;
+  taskGroupId: string | null;
+}>(achievement: T) => ({
+  ...achievement,
+  course: achievement.courseTitle
+    ? {
+        id: achievement.courseId,
+        title: achievement.courseTitle,
+        taskGroupId: achievement.taskGroupId,
+      }
+    : null,
+  images: (() => {
+    try {
+      const images = JSON.parse(achievement.images);
+      return Array.isArray(images) ? images : [];
+    } catch {
+      return [];
+    }
+  })(),
+});
+
+const reviewAchievementInTransaction = async (
+  tx: Prisma.TransactionClient,
+  input: {
+    id: string;
+    status: ReviewStatus;
+    reviewComment: string | null;
+    expectedUpdatedAt: Date;
+    reviewerId: string;
+    syncBadges?: boolean;
+  }
+) => {
+  const current = await tx.achievement.findUnique({
+    where: { id: input.id },
+    select: { id: true, studentId: true, updatedAt: true },
+  });
+  if (!current) throw new Error('NOT_FOUND');
+  if (current.updatedAt.getTime() !== input.expectedUpdatedAt.getTime()) {
+    throw new Error('CONFLICT');
+  }
+
+  const updated = await tx.achievement.updateMany({
+    where: { id: input.id, updatedAt: input.expectedUpdatedAt },
+    data: {
+      reviewStatus: input.status,
+      reviewComment: input.reviewComment,
+      reviewedAt: new Date(),
+      reviewedById: input.reviewerId,
+    },
+  });
+  if (updated.count !== 1) throw new Error('CONFLICT');
+  if (input.syncBadges !== false) await syncStudentBadges(tx, current.studentId);
+  return current.studentId;
+};
+
 // 获取所有成果
 router.get('/achievements', async (req: AuthRequest, res) => {
   try {
-    const achievements = await prisma.achievement.findMany({
-      include: {
-        student: {
-          select: {
-            id: true,
-            studentId: true,
-            nickname: true,
-            avatarEmoji: true,
-          }
-        }
-      },
-      orderBy: { createdAt: 'desc' }
-    });
+    const pageValue = Number.parseInt(String(req.query.page ?? '1'), 10);
+    const page = Number.isFinite(pageValue) && pageValue > 0 ? pageValue : 1;
+    const pageSizeValue = req.query.pageSize ?? req.query.limit;
+    const { limit: pageSize } = parsePagination(0, pageSizeValue, 100);
+    const requestedStatus = req.query.status ?? req.query.reviewStatus;
+    const normalizedRequestedStatus = typeof requestedStatus === 'string' ? requestedStatus.toLowerCase() : requestedStatus;
+    const status = normalizedRequestedStatus && normalizedRequestedStatus !== 'all'
+      ? parseReviewStatus(requestedStatus)
+      : null;
+    if (normalizedRequestedStatus && normalizedRequestedStatus !== 'all' && !status) {
+      return res.status(400).json({ code: 400, message: '审核状态无效', data: null });
+    }
+
+    const where = status ? { reviewStatus: status } : {};
+    const [achievements, total] = await Promise.all([
+      prisma.achievement.findMany({
+        where,
+        include: {
+          student: {
+            select: {
+              id: true,
+              studentId: true,
+              nickname: true,
+              avatarEmoji: true,
+              gradeId: true,
+              classCode: true,
+            },
+          },
+          reviewedBy: {
+            select: { id: true, studentId: true, nickname: true },
+          },
+        },
+        orderBy: { createdAt: 'desc' },
+        skip: (page - 1) * pageSize,
+        take: pageSize,
+      }),
+      prisma.achievement.count({ where }),
+    ]);
 
     res.json({
       code: 0,
       message: 'success',
-      data: achievements,
+      data: {
+        data: achievements.map(serializeAdminAchievement),
+        total,
+        page,
+        pageSize,
+        totalPages: Math.ceil(total / pageSize),
+      },
     });
   } catch (error) {
     console.error('Get achievements error:', error);
@@ -437,20 +543,215 @@ router.get('/achievements', async (req: AuthRequest, res) => {
   }
 });
 
+router.get('/achievements/:id', async (req: AuthRequest, res) => {
+  try {
+    const achievement = await prisma.achievement.findUnique({
+      where: { id: req.params.id },
+      include: {
+        student: {
+          select: {
+            id: true,
+            studentId: true,
+            nickname: true,
+            avatarEmoji: true,
+            gradeId: true,
+            classCode: true,
+            grade: { select: { id: true, name: true } },
+          },
+        },
+        reviewedBy: { select: { id: true, studentId: true, nickname: true } },
+        evaluations: {
+          include: {
+            student: { select: { id: true, studentId: true, nickname: true } },
+          },
+          orderBy: { updatedAt: 'desc' },
+        },
+      },
+    });
+    if (!achievement) {
+      return res.status(404).json({ code: 404, message: '成果不存在', data: null });
+    }
+    res.json({ code: 0, message: 'success', data: serializeAdminAchievement(achievement) });
+  } catch (error) {
+    console.error('Get achievement detail error:', error);
+    res.status(500).json({ code: 500, message: '获取成果详情失败', data: null });
+  }
+});
+
+const reviewAchievementHandler = async (req: AuthRequest, res: Response) => {
+  const status = parseReviewStatus(req.body.status ?? req.body.reviewStatus);
+  const expectedUpdatedAt = parseExpectedUpdatedAt(req.body.expectedUpdatedAt);
+  const reviewComment = typeof (req.body.reviewComment ?? req.body.comment) === 'string'
+    ? String(req.body.reviewComment ?? req.body.comment).trim()
+    : '';
+  if (!status || status === 'PENDING') {
+    return res.status(400).json({ code: 400, message: '审核结果必须为 APPROVED 或 REJECTED', data: null });
+  }
+  if (status === 'REJECTED' && (reviewComment.length < 5 || reviewComment.length > 500)) {
+    return res.status(400).json({ code: 400, message: '驳回意见需为 5-500 字', data: null });
+  }
+  if (!expectedUpdatedAt) {
+    return res.status(400).json({ code: 400, message: 'expectedUpdatedAt 无效或缺失', data: null });
+  }
+
+  try {
+    await prisma.$transaction((tx) => reviewAchievementInTransaction(tx, {
+      id: req.params.id,
+      status,
+      reviewComment: reviewComment || null,
+      expectedUpdatedAt,
+      reviewerId: req.student!.id,
+    }));
+    const achievement = await prisma.achievement.findUnique({
+      where: { id: req.params.id },
+      include: { reviewedBy: { select: { id: true, studentId: true, nickname: true } } },
+    });
+    res.json({ code: 0, message: status === 'APPROVED' ? '审核通过' : '已驳回', data: achievement });
+  } catch (error) {
+    if (error instanceof Error && error.message === 'NOT_FOUND') {
+      return res.status(404).json({ code: 404, message: '成果不存在', data: null });
+    }
+    if (error instanceof Error && error.message === 'CONFLICT') {
+      return res.status(409).json({ code: 409, message: '成果已被修改，请刷新后重试', data: null });
+    }
+    console.error('Review achievement error:', error);
+    res.status(500).json({ code: 500, message: '审核失败', data: null });
+  }
+};
+
+router.post('/achievements/:id/review', reviewAchievementHandler);
+router.patch('/achievements/:id/review', reviewAchievementHandler);
+
+router.post('/achievements/batch-review', async (req: AuthRequest, res) => {
+  const rawItems: unknown[] = Array.isArray(req.body.items)
+    ? req.body.items
+    : Array.isArray(req.body.achievements)
+      ? req.body.achievements
+      : Array.isArray(req.body.ids)
+        ? req.body.ids.map((id: unknown) => ({
+            id,
+            expectedUpdatedAt: req.body.expectedUpdatedAtById?.[String(id)] ?? req.body.expectedUpdatedAt,
+          }))
+        : [];
+  const sharedStatus = parseReviewStatus(req.body.status ?? req.body.reviewStatus);
+  const sharedComment = typeof (req.body.reviewComment ?? req.body.comment) === 'string'
+    ? String(req.body.reviewComment ?? req.body.comment).trim()
+    : '';
+  if (rawItems.length === 0) {
+    return res.status(400).json({ code: 400, message: '请选择要审核的成果', data: null });
+  }
+  if (rawItems.length > 100) {
+    return res.status(400).json({ code: 400, message: '单次最多审核 100 条成果', data: null });
+  }
+
+  const items = rawItems.map((item: unknown) => {
+    const value = item && typeof item === 'object' ? item as Record<string, unknown> : {};
+    const status = parseReviewStatus(value.status ?? value.reviewStatus) ?? sharedStatus;
+    const commentValue = value.reviewComment ?? value.comment;
+    const reviewComment = typeof commentValue === 'string' ? commentValue.trim() : sharedComment;
+    return {
+      id: typeof value.id === 'string' ? value.id : '',
+      status,
+      reviewComment,
+      expectedUpdatedAt: parseExpectedUpdatedAt(value.expectedUpdatedAt),
+    };
+  });
+
+  if (items.some((item) => !item.id || !item.expectedUpdatedAt || !item.status || item.status === 'PENDING')) {
+    return res.status(400).json({ code: 400, message: '批量审核参数不完整', data: null });
+  }
+  if (items.some((item) => item.status === 'REJECTED' && (item.reviewComment.length < 5 || item.reviewComment.length > 500))) {
+    return res.status(400).json({ code: 400, message: '驳回意见需为 5-500 字', data: null });
+  }
+  if (new Set(items.map((item) => item.id)).size !== items.length) {
+    return res.status(400).json({ code: 400, message: '批量审核包含重复成果', data: null });
+  }
+
+  try {
+    await prisma.$transaction(async (tx) => {
+      const affectedStudentIds = new Set<string>();
+      for (const item of items) {
+        const studentId = await reviewAchievementInTransaction(tx, {
+          id: item.id,
+          status: item.status!,
+          reviewComment: item.reviewComment || null,
+          expectedUpdatedAt: item.expectedUpdatedAt!,
+          reviewerId: req.student!.id,
+          syncBadges: false,
+        });
+        affectedStudentIds.add(studentId);
+      }
+      for (const studentId of affectedStudentIds) {
+        await syncStudentBadges(tx, studentId);
+      }
+    });
+    res.json({ code: 0, message: '批量审核完成', data: { count: items.length, updated: items.length } });
+  } catch (error) {
+    if (error instanceof Error && error.message === 'NOT_FOUND') {
+      return res.status(404).json({ code: 404, message: '部分成果不存在，未执行审核', data: null });
+    }
+    if (error instanceof Error && error.message === 'CONFLICT') {
+      return res.status(409).json({ code: 409, message: '部分成果已被修改，请刷新后重试', data: null });
+    }
+    console.error('Batch review achievements error:', error);
+    res.status(500).json({ code: 500, message: '批量审核失败', data: null });
+  }
+});
+
 // 更新成果
 router.put('/achievements/:id', async (req: AuthRequest, res) => {
   try {
     const { id } = req.params;
     const { isPublic, title, description } = req.body;
 
-    const updateData: any = {};
-    if (isPublic !== undefined) updateData.isPublic = isPublic;
-    if (title) updateData.title = title;
-    if (description) updateData.description = description;
+    const existing = await prisma.achievement.findUnique({ where: { id } });
+    if (!existing) {
+      return res.status(404).json({ code: 404, message: '成果不存在', data: null });
+    }
 
-    const achievement = await prisma.achievement.update({
-      where: { id },
-      data: updateData,
+    const updateData: Prisma.AchievementUpdateInput = {};
+    if (isPublic !== undefined) updateData.isPublic = Boolean(isPublic);
+    if (title !== undefined) {
+      const nextTitle = String(title).trim();
+      if (!nextTitle) return res.status(400).json({ code: 400, message: '成果标题不能为空', data: null });
+      updateData.title = nextTitle;
+    }
+    if (description !== undefined) {
+      const nextDescription = String(description).trim();
+      if (!nextDescription) return res.status(400).json({ code: 400, message: '成果描述不能为空', data: null });
+      updateData.description = nextDescription;
+    }
+    const substantiveChanged =
+      (updateData.title !== undefined && updateData.title !== existing.title) ||
+      (updateData.description !== undefined && updateData.description !== existing.description);
+    if (substantiveChanged) {
+      updateData.reviewStatus = 'PENDING';
+      updateData.reviewComment = null;
+      updateData.reviewedAt = null;
+      updateData.reviewedBy = { disconnect: true };
+    }
+
+    const achievement = await prisma.$transaction(async (tx) => {
+      if (substantiveChanged) {
+        await Promise.all([
+          tx.like.deleteMany({ where: { achievementId: id } }),
+          tx.evaluation.deleteMany({ where: { achievementId: id } }),
+        ]);
+        if (existing.likesCount > 0) {
+          await tx.student.update({
+            where: { id: existing.studentId },
+            data: { totalLikes: { decrement: existing.likesCount } },
+          });
+        }
+        updateData.likesCount = 0;
+        updateData.avgAttitude = 0;
+        updateData.avgSkill = 0;
+        updateData.avgResult = 0;
+        updateData.evalCount = 0;
+      }
+      const updated = await tx.achievement.update({ where: { id }, data: updateData });
+      await syncStudentBadges(tx, existing.studentId);
+      return updated;
     });
 
     res.json({
@@ -490,6 +791,7 @@ router.delete('/achievements/:id', async (req: AuthRequest, res) => {
           totalLikes: { decrement: achievement.likesCount },
         },
       });
+      await syncStudentBadges(tx, achievement.studentId);
     });
 
     res.json({
@@ -559,11 +861,12 @@ router.get('/grades', async (req: AuthRequest, res) => {
 
 router.get('/stats', async (req: AuthRequest, res) => {
   try {
-    const [totalUsers, totalCourses, totalAchievements, totalLikes] = await Promise.all([
+    const [totalUsers, totalCourses, totalAchievements, totalLikes, pendingAchievements] = await Promise.all([
       prisma.student.count(),
       prisma.course.count(),
       prisma.achievement.count(),
       prisma.like.count(),
+      prisma.achievement.count({ where: { reviewStatus: 'PENDING' } }),
     ]);
 
     res.json({
@@ -574,6 +877,7 @@ router.get('/stats', async (req: AuthRequest, res) => {
         totalCourses,
         totalAchievements,
         totalLikes,
+        pendingAchievements,
       },
     });
   } catch (error) {

@@ -32,9 +32,9 @@ export const CoursesPage = () => {
     const courseId = (location.state as { courseId?: string } | null)?.courseId;
     if (!courseId || courses.length === 0) return;
     const matched = courses.find((course) => course.id === courseId);
-    if (matched) {
-      setSelectedCourse(matched);
-    }
+    if (!matched) return;
+    const timer = window.setTimeout(() => setSelectedCourse(matched), 0);
+    return () => window.clearTimeout(timer);
   }, [courses, location.state]);
 
   useEffect(() => {
