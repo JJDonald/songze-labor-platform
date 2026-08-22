@@ -24,7 +24,9 @@ beforeEach(async () => {
   await prisma.achievement.deleteMany();
   await prisma.badge.deleteMany();
   await prisma.course.deleteMany();
+  await prisma.studentRosterEntry.deleteMany();
   await prisma.student.deleteMany();
+  await prisma.systemSetting.deleteMany();
   await prisma.grade.deleteMany();
   await prisma.taskGroup.deleteMany();
 

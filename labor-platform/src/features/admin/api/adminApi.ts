@@ -161,6 +161,93 @@ export interface AiConnectionTestResult {
   settings?: AiSettings;
 }
 
+// ---------- Registration mode ----------
+
+export type RegistrationMode = 'OPEN' | 'ROSTER_ONLY' | 'CLOSED';
+
+export interface RegistrationSettings {
+  mode: RegistrationMode;
+}
+
+export const REGISTRATION_MODE_LABELS: Record<RegistrationMode, string> = {
+  OPEN: '开放注册',
+  ROSTER_ONLY: '仅名册注册',
+  CLOSED: '关闭注册',
+};
+
+// ---------- Roster (student roster) ----------
+
+export interface RosterClaimedStudent {
+  id: string;
+  studentId: string;
+  nickname: string;
+}
+
+export interface RosterItem {
+  id: string;
+  studentId: string;
+  name: string;
+  gradeId: number;
+  classCode: string;
+  claimedAt: string | null;
+  claimedStudent: RosterClaimedStudent | null;
+}
+
+export type RosterStatusFilter = 'all' | 'claimed' | 'unclaimed';
+
+export interface RosterStats {
+  total: number;
+  claimed: number;
+  unclaimed: number;
+}
+
+export interface RosterPage {
+  data: RosterItem[];
+  total: number;
+  page: number;
+  pageSize: number;
+  totalPages: number;
+  stats?: RosterStats;
+}
+
+export interface RosterQueryParams {
+  page?: number;
+  pageSize?: number;
+  search?: string;
+  gradeId?: number;
+  classCode?: string;
+  status?: RosterStatusFilter;
+}
+
+export type RosterImportAction = 'create' | 'update' | 'claimed' | 'existingStudent' | 'error';
+
+export interface RosterImportSummary {
+  total: number;
+  create: number;
+  update: number;
+  claimed: number;
+  existingStudent: number;
+  errors: number;
+}
+
+export interface RosterImportRow {
+  /** 行号（服务端实现返回 row；契约定义为 rowNumber，做兼容） */
+  rowNumber?: number;
+  row?: number;
+  studentId: string;
+  name: string;
+  gradeId: number | null;
+  gradeName?: string;
+  classCode: string;
+  action: RosterImportAction;
+  error?: string;
+}
+
+export interface RosterImportPreview {
+  summary: RosterImportSummary;
+  rows: RosterImportRow[];
+}
+
 export const adminApi = {
   // Stats
   getStats: () => api.get<AdminStats>('/admin/stats'),
@@ -244,6 +331,29 @@ export const adminApi = {
   getAiSettings: () => api.get<AiSettings>('/admin/ai-settings'),
   updateAiSettings: (data: AiSettingsUpdateInput) => api.put<AiSettings>('/admin/ai-settings', data),
   testAiSettings: () => api.post<AiConnectionTestResult>('/admin/ai-settings/test'),
+
+  // Registration mode
+  getRegistrationSettings: () => api.get<RegistrationSettings>('/auth/registration-settings'),
+  updateRegistrationSettings: (data: RegistrationSettings) =>
+    api.put<RegistrationSettings>('/admin/registration-settings', data),
+
+  // Student roster
+  getRoster: (params: RosterQueryParams = {}) => {
+    const search = new URLSearchParams();
+    if (params.page) search.set('page', String(params.page));
+    if (params.pageSize) search.set('pageSize', String(params.pageSize));
+    if (params.search) search.set('search', params.search);
+    if (params.gradeId) search.set('gradeId', String(params.gradeId));
+    if (params.classCode) search.set('classCode', params.classCode);
+    if (params.status && params.status !== 'all') search.set('status', params.status);
+    const query = search.toString();
+    return api.get<RosterPage>(`/admin/roster${query ? `?${query}` : ''}`);
+  },
+  previewRosterImport: (file: File) => api.upload<RosterImportPreview>('/admin/roster/import-preview', file),
+  importRoster: (file: File) => api.upload<RosterImportSummary>('/admin/roster/import', file),
+  downloadRosterTemplate: () =>
+    api.download('/admin/roster/template?format=xlsx', '学生名册导入模板.xlsx'),
+  deleteRosterItem: (id: string) => api.delete<void>(`/admin/roster/${id}`),
 
   // Upload
   uploadImage: (file: File) => api.upload<{ url: string; filename: string }>('/upload', file),

@@ -7,7 +7,7 @@ const serverDir = path.dirname(fileURLToPath(import.meta.url));
 const databasePath = path.join(
   serverDir,
   'prisma',
-  `test-review-badges-${process.pid}-${Date.now()}.db`,
+  `test-${process.pid}-${Date.now()}.db`,
 ).replaceAll('\\', '/');
 const databaseUrl = `file:${databasePath}`;
 

@@ -64,3 +64,28 @@ export const adminMediaUpload = multer({
     cb(new Error('不支持的文件类型'));
   },
 });
+
+// 名册文件上传：内存存储（仅解析不落盘），限 5MB，仅支持 xlsx / csv
+const isRosterFile = (file: Express.Multer.File) => {
+  const name = file.originalname.toLowerCase();
+  const mime = file.mimetype.toLowerCase();
+  return (
+    name.endsWith('.xlsx') ||
+    name.endsWith('.csv') ||
+    mime.includes('csv') ||
+    mime.includes('spreadsheet') ||
+    mime.includes('excel')
+  );
+};
+
+export const rosterFileUpload = multer({
+  storage: multer.memoryStorage(),
+  limits: { fileSize: 5 * 1024 * 1024 },
+  fileFilter: (_req, file, cb) => {
+    if (isRosterFile(file)) {
+      cb(null, true);
+      return;
+    }
+    cb(new Error('仅支持 xlsx / csv 格式文件'));
+  },
+});

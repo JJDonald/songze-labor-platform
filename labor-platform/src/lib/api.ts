@@ -8,11 +8,13 @@ export const API_ORIGIN = import.meta.env.VITE_API_URL
 
 export class ApiError extends Error {
   code: number;
+  data: unknown;
 
-  constructor(code: number, message: string) {
+  constructor(code: number, message: string, data?: unknown) {
     super(message);
     this.name = 'ApiError';
     this.code = code;
+    this.data = data;
   }
 }
 
@@ -61,7 +63,7 @@ class ApiClient {
       if (code === 401) {
         this.handleUnauthorized();
       }
-      throw new ApiError(code, payload?.message || `请求失败 (${response.status})`);
+      throw new ApiError(code, payload?.message || `请求失败 (${response.status})`, payload?.data ?? undefined);
     }
 
     return payload as ApiResponse<T>;
@@ -120,6 +122,46 @@ class ApiClient {
     });
 
     return this.parseResponse<T>(response);
+  }
+
+  /**
+   * Downloads a file from the API (expects a non-JSON binary/octet-stream response)
+   * and triggers a browser download with the given filename.
+   */
+  async download(endpoint: string, filename: string): Promise<void> {
+    const token = this.getToken();
+    const headers: HeadersInit = {};
+    if (token) {
+      headers['Authorization'] = `Bearer ${token}`;
+    }
+
+    const response = await fetch(`${API_BASE}${endpoint}`, { method: 'GET', headers });
+
+    if (!response.ok) {
+      let message = `下载失败 (${response.status})`;
+      try {
+        const payload = (await response.json()) as ApiResponse<unknown>;
+        if (payload?.code === 401) {
+          this.handleUnauthorized();
+        }
+        if (payload?.message) {
+          message = payload.message;
+        }
+      } catch {
+        // Non-JSON error body; keep the generic message.
+      }
+      throw new ApiError(response.status, message);
+    }
+
+    const blob = await response.blob();
+    const objectUrl = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = objectUrl;
+    link.download = filename;
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+    URL.revokeObjectURL(objectUrl);
   }
 
   setAuthToken(token: string) {

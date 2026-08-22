@@ -6,12 +6,22 @@ interface User {
   id: string;
   studentId: string;
   nickname: string;
+  realName?: string;
   avatarEmoji: string;
   gradeId: number;
   classCode: string;
   totalAchievements?: number;
   totalLikes?: number;
   role?: 'STUDENT' | 'ADMIN';
+}
+
+export interface RegisterInput {
+  studentId: string;
+  nickname: string;
+  gradeId: number;
+  classCode: string;
+  password: string;
+  realName?: string;
 }
 
 interface UserState {
@@ -21,7 +31,7 @@ interface UserState {
   isLoading: boolean;
   error: string | null;
 
-  register: (studentId: string, nickname: string, gradeId: number, classCode: string, password: string) => Promise<boolean>;
+  register: (input: RegisterInput) => Promise<boolean>;
   login: (studentId: string, password: string) => Promise<boolean>;
   logout: () => void;
   fetchCurrentUser: () => Promise<void>;
@@ -38,15 +48,16 @@ export const useUserStore = create<UserState>()(
       isLoading: false,
       error: null,
 
-      register: async (studentId, nickname, gradeId, classCode, password) => {
+      register: async (input) => {
         set({ isLoading: true, error: null });
         try {
           const response = await api.post<{ token: string; student: User }>('/auth/register', {
-            studentId,
-            nickname,
-            gradeId,
-            classCode,
-            password,
+            studentId: input.studentId,
+            nickname: input.nickname,
+            gradeId: input.gradeId,
+            classCode: input.classCode,
+            password: input.password,
+            ...(input.realName ? { realName: input.realName } : {}),
           });
 
           api.setAuthToken(response.data.token);
