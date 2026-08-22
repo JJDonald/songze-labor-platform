@@ -206,6 +206,29 @@ describe('student roster import', () => {
     expect(entry.claimedStudentId).toBe(studentId);
   });
 
+  it('rejects numeric XLSX student IDs instead of silently changing them', async () => {
+    const workbook = new ExcelJS.Workbook();
+    const sheet = workbook.addWorksheet('学生名册');
+    sheet.addRow(['学籍号', '姓名', '年级', '班级']);
+    sheet.addRow([202606010101, '数字学籍号', '六年级', '1班']);
+    const buffer = Buffer.from(await workbook.xlsx.writeBuffer());
+
+    const response = await request(app)
+      .post('/api/admin/roster/import')
+      .set('Authorization', adminAuth())
+      .attach('file', buffer, {
+        filename: 'numeric-student-id.xlsx',
+        contentType: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+      });
+
+    expect(response.status).toBe(400);
+    expect(response.body.data.rows[0]).toMatchObject({
+      action: 'error',
+      error: expect.stringContaining('学籍号必须使用文本格式'),
+    });
+    expect(await prisma.studentRosterEntry.count()).toBe(0);
+  });
+
   it('rejects invalid or duplicate rows without writing partial data', async () => {
     const file = csv(['A001,张三,六年级,1班', 'A001,李四,九年级,2班']);
     const response = await request(app)
@@ -268,8 +291,39 @@ describe('student roster import', () => {
     expect(list.body.data.data).toHaveLength(1);
     expect(list.body.data.stats).toEqual({ total: 2, claimed: 1, unclaimed: 1 });
 
-    expect((await request(app).delete('/api/admin/roster/seven').set('Authorization', adminAuth())).status).toBe(400);
-    expect((await request(app).delete('/api/admin/roster/six').set('Authorization', adminAuth())).status).toBe(200);
+    const claimedDelete = await request(app).delete('/api/admin/roster/seven').set('Authorization', adminAuth());
+    expect(claimedDelete.status).toBe(400);
+    expect(await prisma.studentRosterEntry.findUnique({ where: { id: 'seven' } })).not.toBeNull();
+
+    const unclaimedDelete = await request(app).delete('/api/admin/roster/six').set('Authorization', adminAuth());
+    expect(unclaimedDelete.status).toBe(200);
+    expect(await prisma.studentRosterEntry.findUnique({ where: { id: 'six' } })).toBeNull();
+
+    const missingDelete = await request(app).delete('/api/admin/roster/missing').set('Authorization', adminAuth());
+    expect(missingDelete.status).toBe(404);
+  });
+
+  it('clears roster claim metadata when the linked student is deleted', async () => {
+    await prisma.studentRosterEntry.create({
+      data: {
+        id: 'linked-entry',
+        studentId: 'EXISTING-001',
+        name: '已有学生',
+        gradeId: 6,
+        classCode: '1班',
+        claimedStudentId: studentId,
+        claimedAt: new Date(),
+      },
+    });
+
+    const response = await request(app)
+      .delete(`/api/admin/users/${studentId}`)
+      .set('Authorization', adminAuth());
+    expect(response.status).toBe(200);
+
+    const entry = await prisma.studentRosterEntry.findUniqueOrThrow({ where: { id: 'linked-entry' } });
+    expect(entry.claimedStudentId).toBeNull();
+    expect(entry.claimedAt).toBeNull();
   });
 
   it('provides both supported template formats', async () => {

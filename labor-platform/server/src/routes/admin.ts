@@ -247,8 +247,14 @@ router.delete('/users/:id', async (req: AuthRequest, res) => {
       }
     }
 
-    await prisma.student.delete({
-      where: { id },
+    await prisma.$transaction(async (tx) => {
+      await tx.studentRosterEntry.updateMany({
+        where: { claimedStudentId: id },
+        data: { claimedStudentId: null, claimedAt: null },
+      });
+      await tx.student.delete({
+        where: { id },
+      });
     });
 
     res.json({
@@ -1248,15 +1254,17 @@ router.get('/roster/template', async (req: AuthRequest, res) => {
 router.delete('/roster/:id', async (req: AuthRequest, res) => {
   try {
     const { id } = req.params;
-    const entry = await prisma.studentRosterEntry.findUnique({ where: { id } });
-    if (!entry) {
-      return res.status(404).json({ code: 404, message: '名册条目不存在', data: null });
-    }
-    if (entry.claimedStudentId) {
+    const deleted = await prisma.studentRosterEntry.deleteMany({
+      where: { id, claimedStudentId: null },
+    });
+    if (deleted.count === 0) {
+      const entry = await prisma.studentRosterEntry.findUnique({ where: { id } });
+      if (!entry) {
+        return res.status(404).json({ code: 404, message: '名册条目不存在', data: null });
+      }
       return res.status(400).json({ code: 400, message: '该条目已被注册账号认领，无法删除', data: null });
     }
 
-    await prisma.studentRosterEntry.delete({ where: { id } });
     res.json({ code: 0, message: '删除成功', data: null });
   } catch (error) {
     console.error('Delete roster entry error:', error);

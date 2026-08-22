@@ -101,13 +101,15 @@ const guessGradeId = (value: unknown): number | null => {
 
 const parseRow = (row: number, cells: unknown[], indexes: [number, number, number, number]): ParsedRow => {
   const [studentIdIdx, nameIdx, gradeIdx, classCodeIdx] = indexes;
-  const studentId = normalizeStudentId(cells[studentIdIdx]);
+  const studentIdCell = cells[studentIdIdx];
+  const studentId = normalizeStudentId(studentIdCell);
   const name = normalizeText(cells[nameIdx]);
   const gradeName = normalizeText(cells[gradeIdx]);
   const classCode = normalizeText(cells[classCodeIdx]);
 
   const errors: string[] = [];
   if (!studentId) errors.push('学籍号不能为空');
+  if (typeof studentIdCell === 'number') errors.push('学籍号必须使用文本格式');
   if (!name) errors.push('姓名不能为空');
   if (!gradeName) errors.push('年级不能为空');
   if (!classCode) errors.push('班级不能为空');
@@ -128,7 +130,7 @@ const parseRow = (row: number, cells: unknown[], indexes: [number, number, numbe
 const readRowCells = (excelRow: ExcelJS.Row): unknown[] => {
   const cells: unknown[] = [];
   excelRow.eachCell({ includeEmpty: true }, (cell, colNumber) => {
-    cells[colNumber - 1] = cell.text;
+    cells[colNumber - 1] = cell.type === ExcelJS.ValueType.Number ? cell.value : cell.text;
   });
   return cells;
 };
