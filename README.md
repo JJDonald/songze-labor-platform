@@ -15,6 +15,8 @@
 
 ### 管理端
 - 👥 用户管理（添加/编辑/删除学生账户）
+- 📋 学生名册（Excel/CSV 预检导入、认领状态与筛选）
+- 🔐 注册控制（开放注册、仅名册注册、关闭注册）
 - 📚 课程管理（创建/编辑/删除课程，支持封面图片、演示视频和演示图片）
 - 🏆 成果管理（审核/公开/删除学生成果）
 - 🤖 评价维度管理（名称、说明、权重、提示词、启用状态）
@@ -125,6 +127,20 @@ npm run dev                 # 开发服务器，http://localhost:5173
 | 👩‍🎓 学生 | `2024060201` | `123456` | 浏览课程、提交成果 |
 
 默认账户仅用于本地演示。公开注册必须由用户自己设置密码，不再使用 `123456`。`db:seed` 只会在账户不存在时写入默认密码，不会覆盖已修改的密码。公开部署前请立即修改管理员密码和 JWT 密钥。
+
+## 📋 学生名册与注册控制
+
+管理员可在 `/admin/roster` 管理待注册学生名册，并切换三种注册模式：
+
+| 模式 | 行为 |
+|---|---|
+| `OPEN` | 开放注册，学生自行填写学籍号、年级和班级 |
+| `ROSTER_ONLY` | 仅名册注册，学生使用“学籍号 + 真实姓名”核验，年级和班级取自名册 |
+| `CLOSED` | 关闭新注册，已有账号仍可正常登录 |
+
+默认模式为 `OPEN`。名册导入不会创建账号或默认密码；学生通过名册核验后自行设置昵称和密码，名册项随后标记为已认领。
+
+导入支持 `.xlsx` 与 UTF-8 `.csv`，单个文件最大 5MB、最多 1000 条数据。标准表头为 `学籍号、姓名、年级、班级`，列顺序可以调整。学籍号按文本保存并保留前导零；建议使用管理页面提供的模板。系统会先预检整份文件，存在缺失字段、非法年级或文件内重复学籍号时不会写入任何数据。未认领记录可由后续导入更新，已认领记录不会被覆盖。
 
 ## 🖥️ 生产部署（Ubuntu / Debian）
 
@@ -252,7 +268,8 @@ Content-Type: application/json
 | 方法 | 路径 | 说明 |
 |------|------|------|
 | `GET` | `/api/health` | 健康检查 |
-| `POST` | `/api/auth/register` | 注册学生账户 |
+| `GET` | `/api/auth/registration-settings` | 获取当前注册模式 |
+| `POST` | `/api/auth/register` | 注册学生账户；仅名册模式需额外提交 `realName` |
 | `POST` | `/api/auth/login` | 登录 |
 | `GET` | `/api/courses` | 课程列表（支持 `?gradeId=&taskGroupId=&search=` 筛选） |
 | `GET` | `/api/courses/:id` | 课程详情 |
@@ -279,6 +296,12 @@ Content-Type: application/json
 |------|------|------|
 | `GET` | `/api/admin/stats` | 统计数据 |
 | `GET/POST/PUT/DELETE` | `/api/admin/users` | 用户管理 |
+| `GET/PUT` | `/api/admin/registration-settings` | 获取或更新注册模式 |
+| `GET` | `/api/admin/roster` | 分页查询名册（支持搜索、年级、班级、认领状态筛选） |
+| `POST` | `/api/admin/roster/import-preview` | 预检 Excel/CSV 名册（multipart field: `file`） |
+| `POST` | `/api/admin/roster/import` | 原子导入名册（multipart field: `file`） |
+| `GET` | `/api/admin/roster/template` | 下载名册模板（`format=xlsx|csv`） |
+| `DELETE` | `/api/admin/roster/:id` | 删除未认领名册项 |
 | `GET/POST/PUT/DELETE` | `/api/admin/courses` | 课程管理 |
 | `GET/PUT/DELETE` | `/api/admin/achievements` | 成果管理 |
 | `GET` | `/api/admin/task-groups` | 任务群列表 |
@@ -300,10 +323,11 @@ curl -H "Authorization: Bearer <your-jwt-token>" http://localhost:3001/api/auth/
 TaskGroup ──┐
              ├── Course ──── Achievement ──── Like
 Grade ───────┘                   │                │
-                                 ├── Evaluation ──┘
-                                 └── Student ──── StudentBadge
+  │                              ├── Evaluation ──┘
+  └── StudentRosterEntry ────────└── Student ──── StudentBadge
                                                        └── Badge
 
+SystemSetting（注册模式、AI 配置等系统设置）
 EvaluationDimension（独立配置表，供手动评价展示和 AI 评价使用）
 ```
 
@@ -319,7 +343,7 @@ npx prisma migrate deploy
 npm run db:seed
 ```
 
-`db:seed` 使用 `upsert`，可重复运行。开发阶段快速同步 Schema 可使用 `npm run db:push`，但生产部署应保留并执行正式迁移。本次 AI 评价功能对应迁移为 `20260810084000_add_evaluation_dimensions`。
+`db:seed` 使用 `upsert`，可重复运行。开发阶段快速同步 Schema 可使用 `npm run db:push`，但生产部署应保留并执行正式迁移。学生名册与注册控制对应迁移为 `20260822100000_add_student_roster_entry`。
 
 ## ✅ 质量检查
 
@@ -331,10 +355,11 @@ npm run build
 
 # 后端
 cd server
+npm run test
 npm run build
 ```
 
-目前项目尚未配置自动化测试与 CI，合并重要功能前至少应执行以上检查，并手工验证登录、成果详情、评价维度管理和 AI 评价链路。
+后端使用 Vitest + Supertest 运行集成测试，测试环境会创建临时 SQLite 数据库并应用全部正式迁移。合并重要功能前还应手工验证登录、名册导入与认领注册、成果审核和 AI 评价链路。
 
 ## ⚠️ 注意事项
 

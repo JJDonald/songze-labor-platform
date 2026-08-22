@@ -38,6 +38,7 @@ export const AdminDashboard = () => {
   ];
 
   const quickLinks = [
+    { label: '学生名册', path: '/admin/roster', icon: '📋', desc: '导入名册并控制注册模式' },
     { label: '用户管理', path: '/admin/users', icon: '👥', desc: '添加、编辑、删除用户账户' },
     { label: '课程管理', path: '/admin/courses', icon: '📚', desc: '管理课程内容和封面图片' },
     { label: '成果审核', path: '/admin/achievements', icon: '🏆', desc: `审核学生成果，当前待处理 ${pendingCount} 条` },
@@ -63,7 +64,7 @@ export const AdminDashboard = () => {
         {/* Quick Links */}
         <div className="rounded-xl bg-white p-4 shadow-sm sm:p-6">
           <h2 className="mb-4 text-lg font-bold sm:text-xl">快捷入口</h2>
-          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 sm:gap-4 lg:grid-cols-4">
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 sm:gap-4 lg:grid-cols-3 xl:grid-cols-5">
             {quickLinks.map((link) => (
               <Link
                 key={link.path}

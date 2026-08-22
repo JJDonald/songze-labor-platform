@@ -162,6 +162,14 @@ async function main() {
   // 7. 创建课程
   await seedCourses();
 
+  // 8. 注册模式默认配置（OPEN，未配置时回退默认，这里兜底写入）
+  console.log('创建注册模式默认配置...');
+  await prisma.systemSetting.upsert({
+    where: { key: 'registration.mode' },
+    update: {},
+    create: { key: 'registration.mode', value: 'OPEN' },
+  });
+
   console.log('✅ 数据库初始化完成！');
 }
 

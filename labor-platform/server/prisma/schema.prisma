@@ -35,8 +35,9 @@ model Grade {
   name      String   @unique
   createdAt DateTime @default(now())
   
-  students Student[]
-  courses  Course[]
+  students      Student[]
+  courses       Course[]
+  rosterEntries StudentRosterEntry[]
 }
 
 model Course {
@@ -94,6 +95,8 @@ model Student {
   badges      StudentBadge[]
   evaluations Evaluation[]
   reviewedAchievements Achievement[] @relation("AchievementReviewer")
+
+  rosterEntry StudentRosterEntry?
 
   @@index([gradeId, classCode])
 }
@@ -194,6 +197,23 @@ model SystemSetting {
   value     String
   updatedAt DateTime @updatedAt
   createdAt DateTime @default(now())
+}
+
+// 学生名册条目：用于注册白名单控制（registration.mode = ROSTER_ONLY 时生效）
+model StudentRosterEntry {
+  id               String    @id @default(uuid())
+  studentId        String    @unique
+  name             String
+  gradeId          Int
+  grade            Grade     @relation(fields: [gradeId], references: [id])
+  classCode        String
+  claimedStudentId String?   @unique
+  claimedStudent   Student?  @relation(fields: [claimedStudentId], references: [id], onDelete: SetNull)
+  claimedAt        DateTime?
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime  @updatedAt
+
+  @@index([gradeId])
 }
 
 model Badge {

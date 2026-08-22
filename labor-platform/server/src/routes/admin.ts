@@ -13,6 +13,16 @@ import {
 } from '../services/aiSettings.js';
 import { assertPasswordStrength, parsePagination } from '../utils.js';
 import { syncStudentBadges } from '../services/badges.js';
+import {
+  getRegistrationSettings,
+  updateRegistrationSettings,
+} from '../services/registrationSettings.js';
+import {
+  previewRoster,
+  importRoster,
+  buildRosterTemplate,
+} from '../services/rosterImport.js';
+import { rosterFileUpload } from '../upload.js';
 
 const router = Router();
 
@@ -1042,6 +1052,215 @@ router.post('/evaluation-dimensions/reset', async (req: AuthRequest, res) => {
       message: '恢复默认评价维度失败',
       data: null,
     });
+  }
+});
+
+// ==================== 注册控制 ====================
+
+router.get('/registration-settings', async (_req: AuthRequest, res) => {
+  try {
+    const settings = await getRegistrationSettings();
+    res.json({
+      code: 0,
+      message: 'success',
+      data: settings,
+    });
+  } catch (error) {
+    console.error('Get registration settings error:', error);
+    res.status(500).json({
+      code: 500,
+      message: '获取注册配置失败',
+      data: null,
+    });
+  }
+});
+
+router.put('/registration-settings', async (req: AuthRequest, res) => {
+  try {
+    const settings = await updateRegistrationSettings({ mode: req.body.mode });
+    res.json({
+      code: 0,
+      message: '注册配置已保存',
+      data: settings,
+    });
+  } catch (error) {
+    console.error('Update registration settings error:', error);
+    res.status(400).json({
+      code: 400,
+      message: error instanceof Error ? error.message : '保存注册配置失败',
+      data: null,
+    });
+  }
+});
+
+// ==================== 学生名册 ====================
+
+// 名册列表：支持分页与关键字（学籍号/姓名/班级）筛选
+router.get('/roster', async (req: AuthRequest, res) => {
+  try {
+    const pageValue = Number.parseInt(String(req.query.page ?? '1'), 10);
+    const page = Number.isFinite(pageValue) && pageValue > 0 ? pageValue : 1;
+    const pageSizeValue = req.query.pageSize ?? req.query.limit;
+    const { limit: pageSize } = parsePagination(0, pageSizeValue, 100);
+    const keywordValue = req.query.search;
+    const keyword = typeof keywordValue === 'string' ? keywordValue.trim() : '';
+    const gradeIdValue = Number.parseInt(String(req.query.gradeId ?? ''), 10);
+    const classCode = typeof req.query.classCode === 'string' ? req.query.classCode.trim() : '';
+    const status = typeof req.query.status === 'string' ? req.query.status.toLowerCase() : 'all';
+    if (!['all', 'claimed', 'unclaimed'].includes(status)) {
+      return res.status(400).json({ code: 400, message: '认领状态无效', data: null });
+    }
+
+    const where: Prisma.StudentRosterEntryWhereInput = {};
+    if (keyword) {
+      where.OR = [
+        { studentId: { contains: keyword } },
+        { name: { contains: keyword } },
+      ];
+    }
+    if (Number.isFinite(gradeIdValue)) where.gradeId = gradeIdValue;
+    if (classCode) where.classCode = classCode;
+    if (status === 'claimed') where.claimedStudentId = { not: null };
+    if (status === 'unclaimed') where.claimedStudentId = null;
+
+    const [entries, total, rosterTotal, claimed] = await Promise.all([
+      prisma.studentRosterEntry.findMany({
+        where,
+        include: {
+          grade: { select: { id: true, name: true } },
+          claimedStudent: { select: { id: true, studentId: true, nickname: true } },
+        },
+        orderBy: { createdAt: 'desc' },
+        skip: (page - 1) * pageSize,
+        take: pageSize,
+      }),
+      prisma.studentRosterEntry.count({ where }),
+      prisma.studentRosterEntry.count(),
+      prisma.studentRosterEntry.count({ where: { claimedStudentId: { not: null } } }),
+    ]);
+
+    res.json({
+      code: 0,
+      message: 'success',
+      data: {
+        data: entries,
+        total,
+        page,
+        pageSize,
+        totalPages: Math.ceil(total / pageSize),
+        stats: {
+          total: rosterTotal,
+          claimed,
+          unclaimed: rosterTotal - claimed,
+        },
+      },
+    });
+  } catch (error) {
+    console.error('Get roster error:', error);
+    res.status(500).json({
+      code: 500,
+      message: '获取名册失败',
+      data: null,
+    });
+  }
+});
+
+// 名册导入预检：解析并分类，不写库
+router.post('/roster/import-preview', (req: AuthRequest, res) => {
+  rosterFileUpload.single('file')(req, res, async (err) => {
+    if (err) {
+      const message = err.message || '上传失败';
+      return res.status(400).json({
+        code: 400,
+        message: message.includes('File too large') ? '文件大小不能超过 5MB' : message,
+        data: null,
+      });
+    }
+    if (!req.file) {
+      return res.status(400).json({ code: 400, message: '请选择要上传的文件', data: null });
+    }
+
+    try {
+      const preview = await previewRoster(req.file.buffer, req.file.originalname);
+      res.json({ code: 0, message: '预检完成', data: preview });
+    } catch (error) {
+      console.error('Preview roster error:', error);
+      res.status(500).json({ code: 500, message: '名册预检失败', data: null });
+    }
+  });
+});
+
+// 名册正式导入：重新解析同一上传文件并在事务内写入（不信任客户端预检结果）
+router.post('/roster/import', (req: AuthRequest, res) => {
+  rosterFileUpload.single('file')(req, res, async (err) => {
+    if (err) {
+      const message = err.message || '上传失败';
+      return res.status(400).json({
+        code: 400,
+        message: message.includes('File too large') ? '文件大小不能超过 5MB' : message,
+        data: null,
+      });
+    }
+    if (!req.file) {
+      return res.status(400).json({ code: 400, message: '请选择要上传的文件', data: null });
+    }
+
+    try {
+      const result = await importRoster(req.file.buffer, req.file.originalname);
+      if (result.summary.errors > 0) {
+        return res.status(400).json({
+          code: 400,
+          message: `名册存在 ${result.summary.errors} 条错误，已取消导入`,
+          data: result,
+        });
+      }
+      res.json({ code: 0, message: '名册导入完成', data: result.summary });
+    } catch (error) {
+      // 并发导入同一学籍号触发唯一约束：事务已回滚，提示重试而非裸 500
+      if (error && typeof error === 'object' && 'code' in error && error.code === 'P2002') {
+        return res.status(409).json({
+          code: 409,
+          message: '检测到并发的名册导入，本次已取消，请稍后重试',
+          data: null,
+        });
+      }
+      console.error('Import roster error:', error);
+      res.status(500).json({ code: 500, message: '名册导入失败', data: null });
+    }
+  });
+});
+
+// 名册模板下载：format=xlsx（默认）| csv
+router.get('/roster/template', async (req: AuthRequest, res) => {
+  try {
+    const format = String(req.query.format || 'xlsx').toLowerCase() === 'csv' ? 'csv' : 'xlsx';
+    const template = await buildRosterTemplate(format);
+    res.setHeader('Content-Type', template.contentType);
+    res.setHeader('Content-Disposition', `attachment; filename*=UTF-8''${encodeURIComponent(template.filename)}`);
+    res.send(template.buffer);
+  } catch (error) {
+    console.error('Get roster template error:', error);
+    res.status(500).json({ code: 500, message: '获取名册模板失败', data: null });
+  }
+});
+
+// 删除名册条目：仅允许删除未被认领的条目
+router.delete('/roster/:id', async (req: AuthRequest, res) => {
+  try {
+    const { id } = req.params;
+    const entry = await prisma.studentRosterEntry.findUnique({ where: { id } });
+    if (!entry) {
+      return res.status(404).json({ code: 404, message: '名册条目不存在', data: null });
+    }
+    if (entry.claimedStudentId) {
+      return res.status(400).json({ code: 400, message: '该条目已被注册账号认领，无法删除', data: null });
+    }
+
+    await prisma.studentRosterEntry.delete({ where: { id } });
+    res.json({ code: 0, message: '删除成功', data: null });
+  } catch (error) {
+    console.error('Delete roster entry error:', error);
+    res.status(500).json({ code: 500, message: '删除名册条目失败', data: null });
   }
 });
 
